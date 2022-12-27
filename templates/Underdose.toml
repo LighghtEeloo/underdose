@@ -1,0 +1,7 @@
+# See `DrugStore.toml` for a full example of `env`.
+env = ["arch"]
+repo = "path/to/your/local/drug_store/repo"
+
+# After carefully editing the rest of the file, remove this line and below to
+# make this `Underdose.toml` file valid and ready to use.
+[tutorial]

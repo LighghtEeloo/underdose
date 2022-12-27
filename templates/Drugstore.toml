@@ -1,0 +1,64 @@
+# `DrugStore.toml` stores shared and synchronized configurations across all platforms.
+
+# The [env] section is used to declare all possible environment variants that
+# are used to filter the pills below. The machine configuration `Underdose.toml`
+# will look it up and decide which `env`s it possesses.
+[env.sys.mac]
+[env.sys.linux.arch]
+[env.sys.linux.nixos]
+[env.school]
+[env.office]
+# Suppose your `Underdose.toml` has `env = ["mac"]`, then you env will actually
+# be `env = ["sys", "mac"]`; if you have `env = ["arch", "school"]`, then you
+# env will be `env = ["sys", "linux", "arch", "school"]`. Basically, all nodes
+# under `env` are considered effective, and a reference to a child node will
+# recursively refer to all parents within the chain.
+
+
+# The [pill] section is used to store the pills that are going to be distributed.
+
+# A simple pill about the nvim configuration. All machines follow the same
+# configuration, and under the same path, so there is no subtlety.
+[[pill]]
+name = "nvim"
+[[pill.drip]]
+root = "~/.config/"
+stem = ["nvim/"]
+
+# A pill with same configuration but with different distribution path. The root
+# and stem are updated as `underdose` read through the pill and update according
+# to the matching result of env. Observe how the `drip`s drip through.
+[[pill]]
+name = "emacs"
+[[pill.drip]]
+root = "~/.config/emacs/"
+stem = ["init.el"]
+# This outputs { root = "~/.config/emacs/", stem = ["init.el"] } for everyone...
+[[pill.drip]]
+env = ["mac"]
+root = "~/.emacs.d/"
+# ...except mac, which gets { root = "~/.emacs.d/", stem = ["init.el"] }.
+
+# Two pills with different configurations on the same software, but share same
+# common files.
+[[pill]]
+name = "zsh"
+[[pill.drip]]
+root = "~/"
+stem = [".zshrc", ".zshenv"]
+[[pill.drip]]
+env = ["mac"]
+incr.stem = [{ site = ".zsh_aliases", repo = ".zsh_aliases_mac" }]
+# `incr`ements are applied after previous `drip`s, so the above `incr` will add
+# the new stem to the previous `stem`.
+[[pill.drip]]
+env = ["linux"]
+incr.stem = [{ site = ".zsh_aliases", repo = ".zsh_aliases_linux" }]
+# As for the mapping, it's just the spec requires an implementation in this
+# repo, and it will be renamed when pouring onto the machine as the LHS. This
+# time all linux machines referred to.
+
+
+# After carefully editing the rest of the file, remove this line and below to
+# make this `DrugStore.toml` file valid and ready to use.
+[tutorial]
