@@ -2,7 +2,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
 use std::{
@@ -12,16 +12,22 @@ use std::{
 use toml_edit::Document;
 
 #[derive(Serialize, Deserialize)]
+pub struct Machine {
+    pub env: HashSet<String>,
+    pub repo: PathBuf,
+    pub tutorial: Option<()>,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct DrugStore {
     /// a map of name -> upward dependencies, up to the root
     pub env: HashMap<String, HashSet<String>>,
-    pub pill: Vec<Pill>,
+    pub pills: HashMap<String, Pill>,
     pub tutorial: Option<()>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct Pill {
-    pub name: String,
     pub drip: Vec<Drip>,
 }
 
@@ -48,6 +54,45 @@ pub struct AtomTask {
     pub src: PathBuf,
     pub dst: PathBuf,
     pub mode: AtomTaskMode,
+}
+
+impl AtomTask {
+    pub fn exec(self) -> anyhow::Result<()> {
+        fs::create_dir_all(self.dst.parent().ok_or_else(|| anyhow::anyhow!("no parent for destination"))?)?;
+        match self.mode {
+            AtomTaskMode::FileCopy => {
+                fs::copy(&self.src, &self.dst)?;
+            }
+            AtomTaskMode::Link => {
+                #[cfg(unix)]
+                {
+                    std::os::unix::fs::symlink(&self.src, &self.dst)?;
+                }
+                #[cfg(windows)]
+                {
+                    if self.src.is_file() {
+                        std::os::windows::fs::symlink_file(&self.src, &self.dst)?;
+                    } else if self.src.is_dir() {
+                        std::os::windows::fs::symlink_dir(&self.src, &self.dst)?;
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Display for AtomTask {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "<{}> {} {} {}",
+            self.mode,
+            self.src.display(),
+            self.mode.display_arrow(),
+            self.dst.display()
+        )
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy)]
@@ -87,7 +132,7 @@ impl Display for AtomTaskMode {
 // }
 
 impl Drip {
-    pub fn check_env(&self, machine_env: HashSet<String>) -> bool {
+    pub fn check_env(&self, machine_env: &HashSet<String>) -> bool {
         true
     }
     /// Resolve stem atoms to absolute file paths; requires a direction
@@ -96,8 +141,8 @@ impl Drip {
         VisSrc: Fn(&Atom) -> &Path + Clone,
         VisDst: Fn(&Atom) -> &Path + Clone,
     {
-        fn extend_atom(tasks: &mut Vec<AtomTask>, src: &Path, dst: &Path, mode: AtomTaskMode) {
-            if src.is_file() || matches!(mode, AtomTaskMode::Link) {
+        fn atoms_copy(tasks: &mut Vec<AtomTask>, src: &Path, dst: &Path, mode: AtomTaskMode) {
+            if src.is_file() {
                 tasks.push(AtomTask {
                     src: src.to_owned(),
                     dst: dst.to_owned(),
@@ -109,15 +154,29 @@ impl Drip {
                     let path = entry.path();
                     let file_name = path.file_name().expect("file_name failed");
                     let dst_path = dst.join(file_name);
-                    extend_atom(tasks, &path, &dst_path, mode)
+                    atoms_copy(tasks, &path, &dst_path, mode)
                 }
+            } else {
+                // panic!("unsupported file detected")
             }
         }
         let mut tasks = Vec::new();
         for atom in &self.stem {
-            let src_path = self.root.join(src(atom));
-            let dst_path = self.pill.join(dst(atom));
-            extend_atom(&mut tasks, &src_path, &dst_path, atom.mode)
+            if matches!(atom.mode, AtomTaskMode::Link) {
+                // Note: symlinks always have repo -> site orientation
+                tasks.push(AtomTask {
+                    src: self.pill.join(&atom.repo),
+                    dst: self.root.join(&atom.site),
+                    mode: atom.mode,
+                })
+            } else {
+                atoms_copy(
+                    &mut tasks,
+                    &self.root.join(src(atom)),
+                    &self.pill.join(dst(atom)),
+                    atom.mode,
+                )
+            }
         }
         tasks
     }
