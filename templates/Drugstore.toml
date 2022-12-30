@@ -30,7 +30,7 @@ stem = ["./"]
 name = "awesome"
 [[pill.drip]]
 root = "~/.config/awesome/"
-git = "git@github.com:path/to/awesome_conf.git"
+remote = "git@github.com:path/to/awesome_conf.git"
 
 # A pill with same configuration but with different distribution path. The root
 # and stem are updated as `underdose` read through the pill and update according

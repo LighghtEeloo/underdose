@@ -32,7 +32,7 @@ fn main() -> anyhow::Result<()> {
         path: underdose_dirs.config_dir().join(underdose_conf_name),
     };
     let machine_buf = underdose_conf.ensure()?.read()?;
-    let machine = machine_buf.parse::<Machine>()?;
+    let machine: Machine = machine_buf.parse()?;
     log::info!("{:#?}", machine);
 
     let drugstore_conf_name = "Drugstore.toml";
@@ -42,7 +42,7 @@ fn main() -> anyhow::Result<()> {
         path: machine.repo.join(drugstore_conf_name),
     };
     let store_buf = drugstore_conf.ensure()?.read()?;
-    let store = store_buf.parse::<Drugstore>()?;
+    let store: Drugstore = (&toml::from_str(&store_buf)?, &machine).try_into()?;
     log::info!("{:#?}", store);
 
     let repo = Repository::open(&machine.repo).expect("failed to open repo");
@@ -62,48 +62,6 @@ fn main() -> anyhow::Result<()> {
     }
 
     return Ok(());
-    // let store = Drugstore {
-    //     env: HashMap::new(),
-    //     pills: HashMap::from([
-    //         (
-    //             format!("nvim"),
-    //             Pill {
-    //                 drips: Vec::from([Drip {
-    //                     env: HashSet::new(),
-    //                     root: Atom {
-    //                         site: home_path.join(".config/nvim/"),
-    //                         repo: machine.repo.join("neovim/"),
-    //                         mode: AtomMode::Link,
-    //                     },
-    //                     var: DripVariant::GitModule {
-    //                         remote: "git@github.com:NvChad/NvChad.git".to_string(),
-    //                     },
-    //                 }]),
-    //             },
-    //         ),
-    //         (
-    //             format!("yoru-awesome"),
-    //             Pill {
-    //                 drips: Vec::from([Drip {
-    //                     env: HashSet::new(),
-    //                     root: Atom {
-    //                         site: home_path.join(".config/awesome/"),
-    //                         repo: machine.repo.join("yoru-awesome/"),
-    //                         mode: AtomMode::FileCopy,
-    //                     },
-    //                     var: DripVariant::UnderManage {
-    //                         stem: Vec::from([Atom {
-    //                             site: format!("./").into(),
-    //                             repo: format!("./").into(),
-    //                             mode: FileCopy,
-    //                         }]),
-    //                     },
-    //                 }]),
-    //             },
-    //         ),
-    //     ]),
-    //     tutorial: None,
-    // };
 
     for (name, pill) in &store.pills {
         for drip in &pill.drips {
@@ -113,7 +71,7 @@ fn main() -> anyhow::Result<()> {
             let drip_task = drip.syn(TaskArrow::SiteToRepo)?;
             match drip_task {
                 DripTask::GitModule { remote, .. } => {}
-                DripTask::UnderManage { ref atoms } => {
+                DripTask::Addicted { ref atoms } => {
                     log::info!(
                         "\n[[{}]]::site_to_repo: {:#?}",
                         name,

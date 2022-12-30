@@ -28,7 +28,7 @@ pub trait Task {
 
 pub enum DripTask {
     GitModule { remote: Box<GitUrl>, root: AtomTask },
-    UnderManage { atoms: Vec<AtomTask> },
+    Addicted { atoms: Vec<AtomTask> },
 }
 
 pub struct AtomTask {
@@ -41,7 +41,7 @@ impl Task for DripTask {
     fn exec(self) -> anyhow::Result<()> {
         match self {
             DripTask::GitModule { remote, root } => todo!(),
-            DripTask::UnderManage { atoms } => {
+            DripTask::Addicted { atoms } => {
                 for atom in atoms {
                     atom.exec()?;
                 }
@@ -67,7 +67,7 @@ impl Synthesis for Drip {
                 },
                 root: root.syn(arrow)?,
             }),
-            Some(DripVariant::UnderManage { stem }) => Ok(DripTask::UnderManage {
+            Some(DripVariant::Addicted { stems: stem }) => Ok(DripTask::Addicted {
                 atoms: Self::resolve_atoms(&root, stem, arrow),
             }),
             None => Err(anyhow::anyhow!("no variant set")),
