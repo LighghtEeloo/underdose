@@ -6,7 +6,7 @@ env = ["arch"]
 repo = "path/to/your/local/drugstore/repo"
 
 
-[default]
+[defaults]
 
 # sync <: "copy" | "link"
 sync = "copy"
@@ -15,7 +15,7 @@ sync = "copy"
 undo = 10
 
 
-[enable]
+[enabled]
 
 # turn on regex patterns everywhere
 regex = false
@@ -38,4 +38,4 @@ repo = true
 
 # After carefully editing the rest of the file, remove this line and below to
 # make this `Underdose.toml` file valid and ready to use.
-[tutorial]
+tutorial = true

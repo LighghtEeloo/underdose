@@ -1,6 +1,7 @@
 #![allow(unused)]
 #![allow(clippy::useless_format)]
 
+use directories_next::ProjectDirs;
 use git2::{Delta, DiffFile, Repository, Statuses};
 use std::{
     collections::{HashMap, HashSet},
@@ -10,6 +11,7 @@ use std::{
 };
 use underdose::{
     task::{AtomTask, DripTask, Synthesis, Task, TaskArrow},
+    utils::Conf,
     Atom,
     AtomMode::{self, *},
     Drip, DripVariant, DrugStore, Machine, Pill,
@@ -19,11 +21,19 @@ fn main() -> anyhow::Result<()> {
     env_logger::init();
 
     let home_path = PathBuf::from(std::env::var("HOME").unwrap());
-    let machine = Machine {
-        env: HashSet::from([format!("arch")]),
-        repo: PathBuf::from(&home_path).join(format!(".IronCloak/")),
-        tutorial: None,
+
+    let underdose_conf_name = "Underdose.toml";
+    let underdose_dirs = ProjectDirs::from("", "LitiaEeloo", "Underdose")
+        .expect("No valid config directory fomulated");
+
+    let underdose_conf = Conf {
+        name: underdose_conf_name.to_string(),
+        template: include_str!("../../templates/Underdose.toml"),
+        path: underdose_dirs.config_dir().join(underdose_conf_name),
     };
+    let machine_buf = underdose_conf.ensure()?.read()?;
+    let machine = machine_buf.parse::<Machine>()?;
+    log::info!("{:#?}", machine);
 
     let repo = Repository::open(&machine.repo).expect("failed to open repo");
 

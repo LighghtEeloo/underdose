@@ -15,8 +15,6 @@ categories = ["command-line-utilities"]
 name = "underdose"
 
 [dependencies]
-# data structure
-# phf = { version = "0.11", features = ["macros"] }
 
 # error handling
 anyhow = "1.0"
@@ -55,3 +53,7 @@ url = "2"
 git-url-parse = "0.4"
 # reqwest = { version = "0.11", features = ["json"] }
 # scraper = "0.14"
+
+# utils
+# phf = { version = "0.11", features = ["macros"] }
+# const_format = "0.2"

@@ -61,4 +61,4 @@ incr.stem = [{ site = ".zsh_aliases", repo = ".zsh_aliases_linux" }]
 
 # After carefully editing the rest of the file, remove this line and below to
 # make this `DrugStore.toml` file valid and ready to use.
-[tutorial]
+tutorial = true

@@ -37,16 +37,6 @@ pub struct AtomTask {
     pub mode: AtomMode,
 }
 
-// impl DrugStore {
-//     pub fn of_file(mut file: File) -> Self {
-//         let mut content = String::new();
-//         file.read_to_string(&mut content);
-//         let doc = content.parse::<Document>().expect("invalid doc");
-//         let item = doc["env"].clone();
-//         todo!()
-//     }
-// }
-
 impl Task for DripTask {
     fn exec(self) -> anyhow::Result<()> {
         match self {
@@ -73,25 +63,8 @@ impl Synthesis for Drip {
                 },
                 root: self.root.syn(arrow)?,
             }),
-            DripVariant::UnderManage { stem } => Ok(match arrow {
-                SiteToRepo => DripTask::UnderManage {
-                    atoms: Self::resolve_atoms(
-                        &self.root.site,
-                        &self.root.repo,
-                        stem,
-                        &|atom| atom.site.as_path(),
-                        &|atom| atom.repo.as_path(),
-                    ),
-                },
-                RepoToSite => DripTask::UnderManage {
-                    atoms: Self::resolve_atoms(
-                        &self.root.site,
-                        &self.root.repo,
-                        stem,
-                        &|atom| atom.repo.as_path(),
-                        &|atom| atom.site.as_path(),
-                    ),
-                },
+            DripVariant::UnderManage { stem } => Ok(DripTask::UnderManage {
+                atoms: Self::resolve_atoms(&self.root, stem, arrow),
             }),
         }
     }
@@ -102,17 +75,7 @@ impl Drip {
         true
     }
     /// Resolve stem atoms to absolute file paths; requires a direction
-    pub fn resolve_atoms<VisSrc, VisDst>(
-        root: &Path,
-        pill: &Path,
-        stem: &Vec<Atom>,
-        src: &VisSrc,
-        dst: &VisDst,
-    ) -> Vec<AtomTask>
-    where
-        VisSrc: Fn(&Atom) -> &Path + Clone,
-        VisDst: Fn(&Atom) -> &Path + Clone,
-    {
+    pub fn resolve_atoms(root: &Atom, stem: &Vec<Atom>, arrow: TaskArrow) -> Vec<AtomTask> {
         fn atoms_copy(tasks: &mut Vec<AtomTask>, src: &Path, dst: &Path) {
             if src.is_file() {
                 tasks.push(AtomTask {
@@ -137,12 +100,16 @@ impl Drip {
             if matches!(atom.mode, AtomMode::Link) {
                 // Note: symlinks always have repo -> site orientation
                 tasks.push(AtomTask {
-                    src: pill.join(&atom.repo),
-                    dst: root.join(&atom.site),
+                    src: root.repo.join(&atom.repo),
+                    dst: root.site.join(&atom.site),
                     mode: AtomMode::Link,
                 })
             } else {
-                atoms_copy(&mut tasks, &root.join(src(atom)), &pill.join(dst(atom)))
+                let (src, dst) = match arrow {
+                    SiteToRepo => (&atom.site, &atom.repo),
+                    RepoToSite => (&atom.repo, &atom.site),
+                };
+                atoms_copy(&mut tasks, &root.site.join(src), &root.repo.join(dst))
             }
         }
         tasks
