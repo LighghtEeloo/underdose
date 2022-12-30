@@ -55,17 +55,22 @@ impl Synthesis for Drip {
     type Task = DripTask;
 
     fn syn(&self, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
+        let root = self
+            .root
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("no root set"))?;
         match &self.var {
-            DripVariant::GitModule { remote } => Ok(DripTask::GitModule {
+            Some(DripVariant::GitModule { remote }) => Ok(DripTask::GitModule {
                 remote: match remote.parse() {
                     Ok(url) => Box::new(url),
                     Err(e) => Err(anyhow::anyhow!("{:?}", e))?,
                 },
-                root: self.root.syn(arrow)?,
+                root: root.syn(arrow)?,
             }),
-            DripVariant::UnderManage { stem } => Ok(DripTask::UnderManage {
-                atoms: Self::resolve_atoms(&self.root, stem, arrow),
+            Some(DripVariant::UnderManage { stem }) => Ok(DripTask::UnderManage {
+                atoms: Self::resolve_atoms(&root, stem, arrow),
             }),
+            None => Err(anyhow::anyhow!("no variant set")),
         }
     }
 }

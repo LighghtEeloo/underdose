@@ -21,17 +21,17 @@ pub struct Pill {
     pub drips: Vec<Drip>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Drip {
     /// env is resolved to trivial form during parsing
     pub env: HashSet<String>,
-    pub root: Atom,
+    pub root: Option<Atom>,
     /// variants
     #[serde(flatten)]
-    pub var: DripVariant,
+    pub var: Option<DripVariant>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum DripVariant {
     GitModule {
         remote: String,
@@ -42,11 +42,18 @@ pub enum DripVariant {
     },
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Atom {
     pub site: PathBuf,
     pub repo: PathBuf,
     pub mode: AtomMode,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct QuasiAtom {
+    pub site: Option<PathBuf>,
+    pub repo: Option<PathBuf>,
+    pub mode: Option<AtomMode>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
@@ -118,12 +125,15 @@ impl FromStr for Drugstore {
                             .as_str()
                             .ok_or_else(|| anyhow::anyhow!("pill name is not string"))?
                             .to_owned();
-                        let drips = pill["drip"]
+                        let mut drips = pill["drip"]
                             .as_array()
                             .ok_or_else(|| anyhow::anyhow!("drips are not in an array"))?
                             .into_iter()
                             .map(|drip| drip.try_into())
                             .collect::<anyhow::Result<Vec<Drip>>>()?;
+
+                        drips = Drip::new().apply_incr(drips);
+
                         Ok((name, Pill { drips }))
                     })
                     .collect::<anyhow::Result<HashMap<String, Pill>>>()?
@@ -143,15 +153,91 @@ impl FromStr for Drugstore {
 impl TryFrom<&toml::Value> for Drip {
     type Error = anyhow::Error;
 
-    fn try_from(value: &toml::Value) -> anyhow::Result<Self> {
+    fn try_from(toml: &toml::Value) -> anyhow::Result<Self> {
+        let env = toml.get("env").map_or_else(
+            || Ok(HashSet::new()),
+            |env| {
+                env.as_array()
+                    .ok_or_else(|| anyhow::anyhow!("env is not an array"))?
+                    .into_iter()
+                    .map(|e| match e.as_str() {
+                        Some(s) => Ok(s.to_string()),
+                        None => Err(anyhow::anyhow!("env item is not a string")),
+                    })
+                    .collect::<anyhow::Result<HashSet<String>>>()
+            },
+        )?;
+
+        let root = if let Some(root) = toml.get("env") {
+            Some(root.try_into()?)
+        } else {
+            None
+        };
+
         todo!()
     }
 }
 
-impl TryFrom<&toml::Value> for Atom {
+impl Drip {
+    pub fn new() -> Drip {
+        Drip {
+            env: HashSet::new(),
+            root: None,
+            var: None,
+        }
+    }
+    pub fn apply(&mut self, drip: Drip) {
+        use DripVariant::*;
+        self.env.extend(drip.env);
+        self.root = drip.root.or(self.root.clone());
+        self.var = match (drip.var, self.var.clone()) {
+            (Some(UnderManage { stem: new }), Some(UnderManage { mut stem })) => {
+                stem.extend(new);
+                Some(UnderManage { stem })
+            }
+            (new @ Some(_), _) => new,
+            (None, old) => old,
+        };
+    }
+    pub fn apply_incr(mut self, mut drips: Vec<Drip>) -> Vec<Drip> {
+        for drip in &mut drips {
+            self.apply(drip.clone());
+            *drip = self.clone();
+        }
+        drips
+    }
+}
+
+impl TryFrom<&toml::Value> for QuasiAtom {
     type Error = anyhow::Error;
 
     fn try_from(value: &toml::Value) -> anyhow::Result<Self> {
-        todo!()
+        if let Some(value) = value.as_str() {
+            Ok(QuasiAtom {
+                site: Some(PathBuf::from(value)),
+                repo: None,
+                mode: None,
+            })
+        } else if let Some(value) = value.as_table() {
+            fn as_path(
+                entry: &str,
+                value: &toml::value::Map<String, toml::Value>,
+            ) -> Option<PathBuf> {
+                value
+                    .get(entry)
+                    .map(|site| match site.as_str() {
+                        Some(site) => Some(PathBuf::from(site)),
+                        None => None,
+                    })
+                    .flatten()
+            }
+            Ok(QuasiAtom {
+                site: as_path("site", value),
+                repo: as_path("repo", value),
+                mode: None,
+            })
+        } else {
+            Err(anyhow::anyhow!("root is neither a path nor an atom"))?
+        }
     }
 }
