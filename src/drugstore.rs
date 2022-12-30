@@ -10,11 +10,44 @@ use std::{
     path::PathBuf,
 };
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Drugstore {
-    /// a map of name -> upward dependencies, up to the root
-    pub env: HashMap<String, HashSet<String>>,
+    pub env: EnvMap,
     pub pills: HashMap<String, Pill>,
+}
+
+/// a map of name -> upward dependencies, up to the root
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EnvMap {
+    pub map: HashMap<String, HashSet<String>>,
+}
+
+impl EnvMap {
+    pub fn resolve(&self, machine: &Machine) -> anyhow::Result<EnvSet> {
+        let mut res = HashSet::new();
+        for tag in &machine.env {
+            let deps = self.map.get(tag).ok_or_else(|| {
+                anyhow::anyhow!("tag {} is not defined in env dependency map", tag)
+            })?;
+            res.extend(deps.to_owned());
+        }
+        Ok(EnvSet { set: res })
+    }
+}
+
+/// a set of machine possesed envs
+#[derive(Serialize, Deserialize, Debug)]
+pub struct EnvSet {
+    pub set: HashSet<String>,
+}
+
+impl EnvSet {
+    pub fn check(&self, tag: &str) -> bool {
+        self.set.contains(tag)
+    }
+    pub fn check_all(&self, tags: &HashSet<String>) -> bool {
+        tags.iter().all(|tag| self.check(tag))
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -24,8 +57,8 @@ pub struct Pill {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Drip {
-    /// env is resolved to trivial form during parsing
-    pub env: HashSet<String>,
+    /// `tags` is resolved to trivial form during parsing
+    pub tags: HashSet<String>,
     pub root: Option<Atom>,
     /// variants
     #[serde(flatten)]
@@ -87,7 +120,7 @@ impl TryFrom<(&toml::Value, &Machine)> for Drugstore {
     type Error = anyhow::Error;
 
     fn try_from((toml, machine): (&toml::Value, &Machine)) -> anyhow::Result<Self> {
-        let mut env = HashMap::new();
+        let mut envmap = HashMap::new();
         fn register_env<'e>(
             env: &mut HashMap<String, HashSet<String>>,
             worklist: &mut Vec<&'e str>,
@@ -113,7 +146,10 @@ impl TryFrom<(&toml::Value, &Machine)> for Drugstore {
                 }
             }
         }
-        register_env(&mut env, &mut Vec::new(), &toml["env"]);
+        register_env(&mut envmap, &mut Vec::new(), &toml["env"]);
+        let env = EnvMap { map: envmap };
+
+        let envset = env.resolve(machine)?;
 
         let pills = if let Some(pills) = toml.get("pill") {
             if let Some(pills_raw) = pills.as_array() {
@@ -136,7 +172,7 @@ impl TryFrom<(&toml::Value, &Machine)> for Drugstore {
                     for drip in drips_raw {
                         drips.push((drip, &name, machine).try_into()?)
                     }
-                    drips = Drip::new().apply_incr(drips);
+                    drips = DripApplyIncr::new(&envset).apply_incr(drips);
 
                     pills.insert(name, Pill { drips });
                 }
@@ -151,6 +187,47 @@ impl TryFrom<(&toml::Value, &Machine)> for Drugstore {
         crate::utils::passed_tutorial(&toml)?;
 
         Ok(Self { env, pills })
+    }
+}
+
+pub struct DripApplyIncr<'a> {
+    pub drip: Drip,
+    pub envset: &'a EnvSet,
+}
+
+impl<'a> DripApplyIncr<'a> {
+    pub fn new(envset: &'a EnvSet) -> Self {
+        DripApplyIncr {
+            drip: Drip {
+                tags: HashSet::new(),
+                root: None,
+                var: None,
+            },
+            envset,
+        }
+    }
+    pub fn apply(&mut self, drip: Drip) {
+        use DripVariant::*;
+        self.drip.tags.extend(drip.tags);
+        self.drip.root = drip.root.or(self.drip.root.clone());
+        self.drip.var = match (drip.var, self.drip.var.clone()) {
+            (Some(Addicted { stems: new }), Some(Addicted { stems: mut stem })) => {
+                stem.extend(new);
+                Some(Addicted { stems: stem })
+            }
+            (new @ Some(_), _) => new,
+            (None, old) => old,
+        };
+    }
+    pub fn apply_incr(mut self, drips: Vec<Drip>) -> Vec<Drip> {
+        let mut res = Vec::new();
+        for drip in drips {
+            if self.envset.check_all(&drip.tags) {
+                self.apply(drip);
+                res.push(self.drip.clone());
+            }
+        }
+        res
     }
 }
 
@@ -173,7 +250,14 @@ impl TryFrom<(&toml::Value, &String, &Machine)> for Drip {
         )?;
 
         let root = if let Some(root) = toml.get("root") {
-            Some((root, name, machine).try_into()?)
+            let quasi = QuasiAtom::try_from(root)?;
+            Some(Atom {
+                site: utils::expand_path(
+                    quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?,
+                )?,
+                repo: utils::expand_path(quasi.repo.unwrap_or_else(|| machine.repo.join(name)))?,
+                mode: quasi.mode.unwrap_or_else(|| machine.sync),
+            })
         } else {
             None
         };
@@ -187,7 +271,19 @@ impl TryFrom<(&toml::Value, &String, &Machine)> for Drip {
             if let Some(stems_raw) = stems.as_array() {
                 let mut stems = Vec::new();
                 for stem in stems_raw {
-                    stems.push((stem, name, machine).try_into()?);
+                    let quasi = QuasiAtom::try_from(stem)?;
+                    stems.push(Atom {
+                        site: utils::expand_path(
+                            quasi
+                                .site
+                                .clone()
+                                .ok_or_else(|| anyhow::anyhow!("no site found"))?,
+                        )?,
+                        repo: utils::expand_path(
+                            quasi.repo.unwrap_or_else(|| quasi.site.unwrap()),
+                        )?,
+                        mode: quasi.mode.unwrap_or_else(|| machine.sync),
+                    });
                 }
                 Some(stems)
             } else {
@@ -207,54 +303,28 @@ impl TryFrom<(&toml::Value, &String, &Machine)> for Drip {
             (None, None) => None,
         };
 
-        Ok(Drip { env, root, var })
-    }
-}
-
-impl Drip {
-    pub fn new() -> Drip {
-        Drip {
-            env: HashSet::new(),
-            root: None,
-            var: None,
-        }
-    }
-    pub fn apply(&mut self, drip: Drip) {
-        use DripVariant::*;
-        self.env.extend(drip.env);
-        self.root = drip.root.or(self.root.clone());
-        self.var = match (drip.var, self.var.clone()) {
-            (Some(Addicted { stems: new }), Some(Addicted { stems: mut stem })) => {
-                stem.extend(new);
-                Some(Addicted { stems: stem })
-            }
-            (new @ Some(_), _) => new,
-            (None, old) => old,
-        };
-    }
-    pub fn apply_incr(mut self, mut drips: Vec<Drip>) -> Vec<Drip> {
-        for drip in &mut drips {
-            self.apply(drip.clone());
-            *drip = self.clone();
-        }
-        drips
-    }
-}
-
-impl TryFrom<(&toml::Value, &String, &Machine)> for Atom {
-    type Error = anyhow::Error;
-
-    fn try_from(
-        (value, name, machine): (&toml::Value, &String, &Machine),
-    ) -> Result<Self, Self::Error> {
-        let quasi = QuasiAtom::try_from(value)?;
-        Ok(Atom {
-            site: quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?,
-            repo: quasi.repo.unwrap_or_else(|| machine.repo.join(name)),
-            mode: quasi.mode.unwrap_or_else(|| machine.sync),
+        Ok(Drip {
+            tags: env,
+            root,
+            var,
         })
     }
 }
+
+// impl TryFrom<(&toml::Value, &String, &Machine)> for Atom {
+//     type Error = anyhow::Error;
+
+//     fn try_from(
+//         (value, name, machine): (&toml::Value, &String, &Machine),
+//     ) -> Result<Self, Self::Error> {
+//         let quasi = QuasiAtom::try_from(value)?;
+//         Ok(Atom {
+//             site: quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?,
+//             repo: quasi.repo.unwrap_or_else(|| machine.repo.join(name)),
+//             mode: quasi.mode.unwrap_or_else(|| machine.sync),
+//         })
+//     }
+// }
 
 impl TryFrom<&toml::Value> for QuasiAtom {
     type Error = anyhow::Error;
@@ -262,7 +332,7 @@ impl TryFrom<&toml::Value> for QuasiAtom {
     fn try_from(value: &toml::Value) -> anyhow::Result<Self> {
         if let Some(value) = value.as_str() {
             Ok(QuasiAtom {
-                site: Some(utils::expand_path(value)),
+                site: Some(PathBuf::from(value)),
                 repo: None,
                 mode: None,
             })
@@ -274,7 +344,7 @@ impl TryFrom<&toml::Value> for QuasiAtom {
                 value
                     .get(entry)
                     .map(|site| match site.as_str() {
-                        Some(site) => Some(utils::expand_path(site)),
+                        Some(site) => Some(PathBuf::from(site)),
                         None => None,
                     })
                     .flatten()

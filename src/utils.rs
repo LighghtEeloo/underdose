@@ -38,6 +38,14 @@ pub fn passed_tutorial(toml: &toml::Value) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn expand_path<P: AsRef<Path>>(path: P) -> PathBuf {
-    PathBuf::from(shellexpand::path::tilde(path.as_ref()))
+pub fn expand_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
+    Ok(PathBuf::from(shellexpand::path::tilde(path.as_ref())))
+}
+
+pub fn validate_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
+    let mut path = expand_path(path)?;
+    if !path.exists() {
+        path = path.canonicalize()?;
+    }
+    Ok(path)
 }
