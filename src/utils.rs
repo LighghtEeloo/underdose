@@ -1,3 +1,4 @@
+use globset::GlobBuilder;
 use std::{
     io::Read,
     path::{Path, PathBuf},
@@ -44,8 +45,29 @@ pub fn expand_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
 
 pub fn validate_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
     let mut path = expand_path(path)?;
-    if !path.exists() {
-        path = path.canonicalize()?;
-    }
+    path = path.canonicalize()?;
     Ok(path)
+}
+
+#[derive(Debug, Clone)]
+pub struct IgnoreSet {
+    globs: Vec<globset::GlobMatcher>,
+}
+
+impl IgnoreSet {
+    pub fn new(ignore: impl Iterator<Item = impl AsRef<str>>) -> Self {
+        let mut globs = Vec::new();
+        for p in ignore {
+            globs.push(
+                GlobBuilder::new(p.as_ref())
+                    .build()
+                    .expect("invalid glob pattern")
+                    .compile_matcher(),
+            );
+        }
+        Self { globs }
+    }
+    pub fn is_ignored(&self, path: impl AsRef<Path>) -> bool {
+        self.globs.iter().any(|g| g.is_match(path.as_ref()))
+    }
 }

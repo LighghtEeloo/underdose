@@ -2,8 +2,9 @@
 
 pub mod drugstore;
 pub mod machine;
+pub mod repo;
 pub mod task;
 pub mod utils;
 
-pub use drugstore::{Atom, AtomMode, Drip, DripVariant, Drugstore, Pill};
+pub use drugstore::Drugstore;
 pub use machine::Machine;

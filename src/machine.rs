@@ -9,15 +9,16 @@ use std::{
     path::PathBuf,
 };
 
-use crate::{utils, AtomMode};
+use crate::utils::IgnoreSet;
+use crate::{drugstore::AtomMode, utils};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Clone)]
 pub struct Machine {
     pub env: HashSet<String>,
     pub repo: PathBuf,
     pub sync: AtomMode,
     pub undo: usize,
-    pub ignore: Vec<PathBuf>,
+    pub ignore: IgnoreSet,
     pub submodule: bool,
     pub glob: bool,
     pub symlink: bool,
@@ -68,7 +69,7 @@ impl TryFrom<MachineConf> for Machine {
             repo: utils::expand_path(&repo)?,
             sync,
             undo,
-            ignore,
+            ignore: IgnoreSet::new(ignore.iter()),
             submodule,
             glob,
             symlink,
@@ -92,7 +93,7 @@ pub struct MachineConf {
 pub struct DefaultsConf {
     pub sync: AtomMode,
     pub undo: usize,
-    pub ignore: Vec<PathBuf>,
+    pub ignore: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

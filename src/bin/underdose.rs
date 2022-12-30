@@ -10,11 +10,15 @@ use std::{
     path::{Path, PathBuf},
 };
 use underdose::{
-    task::{AtomTask, DripTask, Synthesis, Task, TaskArrow},
+    drugstore::{
+        Atom,
+        AtomMode::{self, *},
+        Drip, DripVariant, Pill,
+    },
+    repo::Dirt,
+    task::{AtomTask, DripTask, Exec, Synthesis, TaskArrow},
     utils::{self, Conf},
-    Atom,
-    AtomMode::{self, *},
-    Drip, DripVariant, Drugstore, Machine, Pill,
+    Drugstore, Machine,
 };
 
 fn main() -> anyhow::Result<()> {
@@ -38,7 +42,7 @@ fn main() -> anyhow::Result<()> {
     );
     let machine_buf = underdose_conf.ensure()?.read()?;
     let machine: Machine = machine_buf.as_str().try_into()?;
-    log::info!("\n{:#?}", machine);
+    log::debug!("\n{:#?}", machine);
 
     let drugstore_conf_name = "Drugstore.toml";
     let drugstore_conf = Conf {
@@ -53,7 +57,7 @@ fn main() -> anyhow::Result<()> {
     );
     let store_buf = drugstore_conf.ensure()?.read()?;
     let store: Drugstore = (&toml::from_str(&store_buf)?, &machine).try_into()?;
-    log::info!("\n{:#?}", store);
+    log::debug!("\n{:#?}", store);
 
     let repo = Repository::open(&machine.repo).expect("failed to open repo");
 
@@ -71,13 +75,8 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    return Ok(());
-
     for (name, pill) in &store.pills {
-        if !pill.drip.check_env(&machine.env) {
-            continue;
-        }
-        let drip_task = pill.drip.syn(TaskArrow::SiteToRepo)?;
+        let drip_task = pill.drip.synthesis(&machine, TaskArrow::SiteToRepo)?;
         match drip_task {
             DripTask::GitModule { remote, .. } => {}
             DripTask::Addicted { ref atoms } => {
@@ -106,55 +105,4 @@ fn main() -> anyhow::Result<()> {
         // }
     }
     Ok(())
-}
-
-pub struct Dirt<'a> {
-    old: &'a Path,
-    new: &'a Path,
-    delta: Delta,
-}
-
-impl<'a> Display for Dirt<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{} ===[{:?}]==> {}",
-            self.old.display(),
-            self.delta,
-            self.new.display(),
-        )
-    }
-}
-
-impl<'a> Dirt<'a> {
-    fn of_repo_status(statuses: &'a Statuses) -> anyhow::Result<Vec<Dirt<'a>>> {
-        let mut dirts = Vec::new();
-        let file_to_path =
-            |file: DiffFile<'a>| file.path().ok_or_else(|| anyhow::anyhow!("file path err"));
-        for status in statuses.iter() {
-            match status.index_to_workdir() {
-                None => (),
-                Some(status) => {
-                    let delta = status.status();
-                    match delta {
-                        Delta::Unmodified | Delta::Ignored => (),
-                        Delta::Added
-                        | Delta::Deleted
-                        | Delta::Modified
-                        | Delta::Renamed
-                        | Delta::Copied
-                        | Delta::Untracked
-                        | Delta::Typechange
-                        | Delta::Unreadable
-                        | Delta::Conflicted => dirts.push(Dirt {
-                            old: file_to_path(status.old_file())?,
-                            new: file_to_path(status.new_file())?,
-                            delta,
-                        }),
-                    }
-                }
-            }
-        }
-        Ok(dirts)
-    }
 }
