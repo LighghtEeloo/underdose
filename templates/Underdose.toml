@@ -21,12 +21,9 @@ ignore = ["**/.git/"]
 
 [features]
 
-# git submodule support: drip level submodule detection; automatically moves
-# git repo to the drugstore or clone it if not present
+# git submodule support: drip level submodule detection; automatically clones
+# git repo to the drugstore if not present
 submodule = true
-
-# turn on glob patterns everywhere
-glob = false
 
 # sync local symlinks in settings (not implemented)
 symlink = false

@@ -20,7 +20,6 @@ pub struct Machine {
     pub undo: usize,
     pub ignore: IgnoreSet,
     pub submodule: bool,
-    pub glob: bool,
     pub symlink: bool,
     pub cleanup_site: bool,
     pub cleanup_repo: bool,
@@ -46,7 +45,6 @@ impl TryFrom<MachineConf> for Machine {
             features:
                 FeaturesConf {
                     submodule,
-                    glob,
                     symlink,
                 },
             cleanup:
@@ -71,7 +69,6 @@ impl TryFrom<MachineConf> for Machine {
             undo,
             ignore: IgnoreSet::new(ignore.iter()),
             submodule,
-            glob,
             symlink,
             cleanup_site,
             cleanup_repo,
@@ -99,7 +96,6 @@ pub struct DefaultsConf {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FeaturesConf {
     pub submodule: bool,
-    pub glob: bool,
     pub symlink: bool,
 }
 

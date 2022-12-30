@@ -77,7 +77,7 @@ fn main() -> anyhow::Result<()> {
 
     for (name, pill) in &store.pills {
         let drip_task = pill.drip.synthesis(&machine, TaskArrow::SiteToRepo)?;
-        match drip_task {
+        match &drip_task {
             DripTask::GitModule { remote, .. } => {}
             DripTask::Addicted { ref atoms } => {
                 log::info!(
@@ -91,18 +91,18 @@ fn main() -> anyhow::Result<()> {
             }
         }
 
-        // let mut response = String::new();
-        // print!("proceed?");
-        // io::stdout().flush();
-        // {
-        //     let stdin = io::stdin();
-        //     stdin.read_line(&mut response)?;
-        // }
+        let mut response = String::new();
+        print!("proceed?");
+        io::stdout().flush();
+        {
+            let stdin = io::stdin();
+            stdin.read_line(&mut response)?;
+        }
 
-        // if (response.to_lowercase().starts_with('y')) {
-        //     println!("executing...");
-        //     drip_task.exec()?;
-        // }
+        if (response.to_lowercase().starts_with('y')) {
+            println!("executing...");
+            drip_task.exec()?;
+        }
     }
     Ok(())
 }
