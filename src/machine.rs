@@ -18,7 +18,6 @@ pub struct Machine {
     pub sync: AtomMode,
     pub undo: usize,
     pub glob: bool,
-    pub incr: bool,
     pub git: bool,
     pub symlink: bool,
     pub cleanup_site: bool,
@@ -70,9 +69,6 @@ impl FromStr for Machine {
         let glob = enabled["glob"]
             .as_bool()
             .ok_or_else(|| anyhow::anyhow!("enabled.glob is missing"))?;
-        let incr = enabled["incr"]
-            .as_bool()
-            .ok_or_else(|| anyhow::anyhow!("enabled.incr is missing"))?;
         let git = enabled["git"]
             .as_bool()
             .ok_or_else(|| anyhow::anyhow!("enabled.git is missing"))?;
@@ -96,7 +92,6 @@ impl FromStr for Machine {
             sync,
             undo,
             glob,
-            incr,
             git,
             symlink,
             cleanup_site,

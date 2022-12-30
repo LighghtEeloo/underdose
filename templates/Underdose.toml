@@ -24,10 +24,6 @@ git = true
 # turn on glob patterns everywhere
 glob = false
 
-# incremental drip configurations: the final configuration is made up of every
-# valid drip (that survived env filter)
-incr = false
-
 # sync local symlinks in settings (not implemented)
 symlink = false
 
