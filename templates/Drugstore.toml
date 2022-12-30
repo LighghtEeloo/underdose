@@ -22,8 +22,8 @@
 [[pill]]
 name = "nvim"
 [[pill.drip]]
-root = "~/.config/"
-stem = ["nvim/"]
+root = "~/.config/nvim/"
+stem = ["./"]
 
 # A pill with same configuration but with different distribution path. The root
 # and stem are updated as `underdose` read through the pill and update according

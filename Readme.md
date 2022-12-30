@@ -52,8 +52,8 @@ Contains two parts.
 [[pill]]
 name = "nvim"
 [[pill.drip]]
-root = "~/.config/"
-stem = ["nvim/"]
+site = "~/.config/nvim/"
+stem = ["./"]
 ```
 
 The configuration file for local `underdose`, named `Underdose.toml`, can be accessed through CLI (`ud config`, see below). A sample (and detailed tutorial) can be found in `template/Drugstore.toml`.

@@ -5,26 +5,36 @@ env = ["arch"]
 # path to the local drugstore repo
 repo = "path/to/your/local/drugstore/repo"
 
+
 [default]
+
 # sync <: "copy" | "link"
 sync = "copy"
+
 # recent versions to keep
 undo = 10
 
+
 [enable]
+
 # turn on regex patterns everywhere
 regex = false
+
 # incremental drip configurations: the final configuration is made up of every
 # valid drip (that survived env filter)
 incr = false
-# use git as remote (not implemented)
-git = false
-# sync local symlinks (not implemented)
+
+# git repo support: drip level submodule detection; automatically moves
+# submodule to the drugstore
+git = true
+
+# sync local symlinks in settings (not implemented)
 symlink = false
 
 [cleanup.empty_dir]
 site = false
 repo = true
+
 
 # After carefully editing the rest of the file, remove this line and below to
 # make this `Underdose.toml` file valid and ready to use.
