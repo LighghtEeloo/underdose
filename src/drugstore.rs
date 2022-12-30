@@ -1,4 +1,4 @@
-use crate::Machine;
+use crate::{utils, Machine};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::fs::{self, File};
@@ -262,7 +262,7 @@ impl TryFrom<&toml::Value> for QuasiAtom {
     fn try_from(value: &toml::Value) -> anyhow::Result<Self> {
         if let Some(value) = value.as_str() {
             Ok(QuasiAtom {
-                site: Some(PathBuf::from(value)),
+                site: Some(utils::expand_path(value)),
                 repo: None,
                 mode: None,
             })
@@ -274,7 +274,7 @@ impl TryFrom<&toml::Value> for QuasiAtom {
                 value
                     .get(entry)
                     .map(|site| match site.as_str() {
-                        Some(site) => Some(PathBuf::from(site)),
+                        Some(site) => Some(utils::expand_path(site)),
                         None => None,
                     })
                     .flatten()

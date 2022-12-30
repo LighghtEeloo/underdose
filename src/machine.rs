@@ -9,7 +9,7 @@ use std::{
     path::PathBuf,
 };
 
-use crate::AtomMode;
+use crate::{utils, AtomMode};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Machine {
@@ -24,10 +24,10 @@ pub struct Machine {
     pub cleanup_repo: bool,
 }
 
-impl FromStr for Machine {
-    type Err = anyhow::Error;
+impl TryFrom<&str> for Machine {
+    type Error = anyhow::Error;
 
-    fn from_str(buf: &str) -> anyhow::Result<Self> {
+    fn try_from(buf: &str) -> anyhow::Result<Self> {
         let toml: toml::Value = toml::from_str(&buf)?;
         let env = toml["env"]
             .as_array()
@@ -38,7 +38,7 @@ impl FromStr for Machine {
                 None => Err(anyhow::anyhow!("env item is not a string")),
             })
             .collect::<anyhow::Result<HashSet<String>>>()?;
-        let repo = PathBuf::from(
+        let repo = utils::expand_path(
             toml["repo"]
                 .as_str()
                 .ok_or_else(|| anyhow::anyhow!("repo is not a string"))?,

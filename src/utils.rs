@@ -1,4 +1,7 @@
-use std::{io::Read, path::PathBuf};
+use std::{
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 pub struct Conf {
     pub name: String,
@@ -28,4 +31,8 @@ pub fn passed_tutorial(toml: &toml::Value) -> anyhow::Result<()> {
         Err(anyhow::anyhow!("tutorial has not been completed yet"))?;
     }
     Ok(())
+}
+
+pub fn expand_path<P: AsRef<Path>>(path: P) -> PathBuf {
+    PathBuf::from(shellexpand::path::tilde(path.as_ref()))
 }

@@ -11,7 +11,7 @@ use std::{
 };
 use underdose::{
     task::{AtomTask, DripTask, Synthesis, Task, TaskArrow},
-    utils::Conf,
+    utils::{self, Conf},
     Atom,
     AtomMode::{self, *},
     Drip, DripVariant, Drugstore, Machine, Pill,
@@ -20,7 +20,7 @@ use underdose::{
 fn main() -> anyhow::Result<()> {
     env_logger::init();
 
-    let home_path = PathBuf::from(std::env::var("HOME").unwrap());
+    let home_path = utils::expand_path(std::env::var("HOME").unwrap());
 
     let underdose_conf_name = "Underdose.toml";
     let underdose_dirs = ProjectDirs::from("", "LitiaEeloo", "Underdose")
@@ -32,7 +32,7 @@ fn main() -> anyhow::Result<()> {
         path: underdose_dirs.config_dir().join(underdose_conf_name),
     };
     let machine_buf = underdose_conf.ensure()?.read()?;
-    let machine: Machine = machine_buf.parse()?;
+    let machine: Machine = machine_buf.as_str().try_into()?;
     log::info!("{:#?}", machine);
 
     let drugstore_conf_name = "Drugstore.toml";

@@ -46,7 +46,7 @@ colored = "2.0"
 
 # path management
 directories-next = "2.0"
-shellexpand = "3.0"
+shellexpand = { version = "3.0", features = ["path"] }
 
 # web
 url = "2"
