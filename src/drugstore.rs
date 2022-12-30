@@ -109,11 +109,49 @@ impl FromStr for Drugstore {
         }
         register_env(&mut env, &mut Vec::new(), &toml["env"]);
 
+        let pills = if let Some(pills) = toml.get("pill") {
+            if let Some(pills) = pills.as_array() {
+                pills
+                    .into_iter()
+                    .map(|pill| {
+                        let name = pill["name"]
+                            .as_str()
+                            .ok_or_else(|| anyhow::anyhow!("pill name is not string"))?
+                            .to_owned();
+                        let drips = pill["drip"]
+                            .as_array()
+                            .ok_or_else(|| anyhow::anyhow!("drips are not in an array"))?
+                            .into_iter()
+                            .map(|drip| drip.try_into())
+                            .collect::<anyhow::Result<Vec<Drip>>>()?;
+                        Ok((name, Pill { drips }))
+                    })
+                    .collect::<anyhow::Result<HashMap<String, Pill>>>()?
+            } else {
+                Err(anyhow::anyhow!("pills are not in an array"))?
+            }
+        } else {
+            HashMap::new()
+        };
+
         crate::utils::passed_tutorial(&toml)?;
 
-        Ok(Self {
-            env,
-            pills: HashMap::new(),
-        })
+        Ok(Self { env, pills })
+    }
+}
+
+impl TryFrom<&toml::Value> for Drip {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &toml::Value) -> anyhow::Result<Self> {
+        todo!()
+    }
+}
+
+impl TryFrom<&toml::Value> for Atom {
+    type Error = anyhow::Error;
+
+    fn try_from(value: &toml::Value) -> anyhow::Result<Self> {
+        todo!()
     }
 }

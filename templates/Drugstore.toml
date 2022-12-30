@@ -25,6 +25,13 @@ name = "nvim"
 root = "~/.config/nvim/"
 stem = ["./"]
 
+# A pill about the awesome configuration, stored in a git submodule.
+[[pill]]
+name = "awesome"
+[[pill.drip]]
+root = "~/.config/awesome/"
+git = "git@github.com:path/to/awesome_conf.git"
+
 # A pill with same configuration but with different distribution path. The root
 # and stem are updated as `underdose` read through the pill and update according
 # to the matching result of env. Observe how the `drip`s drip through.
@@ -39,7 +46,7 @@ env = ["mac"]
 root = "~/.emacs.d/"
 # ...except mac, which gets { root = "~/.emacs.d/", stem = ["init.el"] }.
 
-# Two pills with different configurations on the same software, but share same
+# A pill with two different configurations on the same software, but share same
 # common files.
 [[pill]]
 name = "zsh"
