@@ -1,4 +1,5 @@
 use crate::drugstore::{Atom, AtomMode, Drip, DripVariant};
+use crate::utils;
 use crate::Machine;
 use git_url_parse::GitUrl;
 use serde::{Deserialize, Serialize};
@@ -75,7 +76,7 @@ mod synthesis {
                         stems,
                         machine,
                     }
-                    .resolve_atoms(arrow),
+                    .resolve_atoms(arrow)?,
                 }),
                 None => Err(anyhow::anyhow!("no variant set")),
             }
@@ -90,8 +91,14 @@ mod synthesis {
     }
 
     impl<'a> AddictedDrip<'a> {
-        fn atoms_copy(self, tasks: &mut Vec<AtomTask>, src: &Path, dst: &Path) {
-            if self.machine.ignore.is_ignored(src) {
+        fn atoms_copy(
+            self,
+            tasks: &mut Vec<AtomTask>,
+            src: &Path,
+            dst: &Path,
+        ) -> anyhow::Result<()> {
+            let src = utils::canonicalize_path(src)?;
+            if self.machine.ignore.is_ignored(&src) {
                 log::debug!("ignoring {}", src.display())
             } else if src.is_file() {
                 tasks.push(AtomTask {
@@ -102,17 +109,18 @@ mod synthesis {
             } else if src.is_dir() {
                 for entry in src.read_dir().expect("read_dir failed") {
                     let entry = entry.expect("entry failed");
-                    let path = entry.path();
-                    let file_name = path.file_name().expect("file_name failed");
+                    let src_path = entry.path();
+                    let file_name = src_path.file_name().expect("file_name failed");
                     let dst_path = dst.join(file_name);
-                    self.atoms_copy(tasks, &path, &dst_path)
+                    self.atoms_copy(tasks, &src_path, &dst_path)?;
                 }
             } else {
                 log::warn!("unsupported file detected: {}", src.display())
             }
+            Ok(())
         }
         /// Resolve stem atoms to absolute file paths; requires a direction
-        fn resolve_atoms(self, arrow: TaskArrow) -> Vec<AtomTask> {
+        fn resolve_atoms(self, arrow: TaskArrow) -> anyhow::Result<Vec<AtomTask>> {
             let AddictedDrip {
                 root,
                 stems,
@@ -132,10 +140,10 @@ mod synthesis {
                         SiteToRepo => (&atom.site, &atom.repo),
                         RepoToSite => (&atom.repo, &atom.site),
                     };
-                    self.atoms_copy(&mut tasks, &root.site.join(src), &root.repo.join(dst))
+                    self.atoms_copy(&mut tasks, &root.site.join(src), &root.repo.join(dst))?
                 }
             }
-            tasks
+            Ok(tasks)
         }
     }
 

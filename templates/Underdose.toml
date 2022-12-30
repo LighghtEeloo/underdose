@@ -17,7 +17,7 @@ sync = "copy"
 undo = 10
 
 # global ignore
-ignore = [".git/"]
+ignore = ["**/.git/"]
 
 [features]
 
