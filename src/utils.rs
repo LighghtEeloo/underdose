@@ -3,6 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+#[derive(Debug)]
 pub struct Conf {
     pub name: String,
     pub template: &'static str,
@@ -27,8 +28,12 @@ impl Conf {
 
 #[must_use]
 pub fn passed_tutorial(toml: &toml::Value) -> anyhow::Result<()> {
-    if toml.get("tutorial").is_some() {
-        Err(anyhow::anyhow!("tutorial has not been completed yet"))?;
+    if let Some(tutorial) = toml.get("tutorial") {
+        if let Some(tutorial) = tutorial.as_table() {
+            if !tutorial.is_empty() {
+                Err(anyhow::anyhow!("tutorial has not been completed yet"))?;
+            }
+        }
     }
     Ok(())
 }

@@ -1,9 +1,11 @@
 # DO NOT DELETE ANY OPTION because it's better to keep things obvious.
 
-# see `DrugStore.toml` for a full example of `env`.
+# (unimportant) unique name only for building dir
+name = "archan"
+# see `DrugStore.toml` for a full example of `env`
 env = ["arch"]
 # path to the local drugstore repo
-repo = "path/to/your/local/drugstore/repo"
+repo = "path/to/your/local/drugstore/repo/"
 
 
 [defaults]
@@ -14,12 +16,14 @@ sync = "copy"
 # recent versions to keep
 undo = 10
 
+# global ignore
+ignore = [".git/"]
 
-[enabled]
+[features]
 
-# git repo support: drip level submodule detection; automatically moves
-# submodule to the drugstore
-git = true
+# git submodule support: drip level submodule detection; automatically moves
+# git repo to the drugstore or clone it if not present
+submodule = true
 
 # turn on glob patterns everywhere
 glob = false
@@ -34,4 +38,4 @@ repo = true
 
 # After carefully editing the rest of the file, remove this line and below to
 # make this `Underdose.toml` file valid and ready to use.
-[tutorial]
+[tutorial.underdose]

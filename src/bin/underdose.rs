@@ -31,9 +31,14 @@ fn main() -> anyhow::Result<()> {
         template: include_str!("../../templates/Underdose.toml"),
         path: underdose_dirs.config_dir().join(underdose_conf_name),
     };
+    log::info!(
+        "\nreading underdose_conf: \n\tname: {}\n\tpath: {}",
+        underdose_conf.name,
+        underdose_conf.path.display()
+    );
     let machine_buf = underdose_conf.ensure()?.read()?;
     let machine: Machine = machine_buf.as_str().try_into()?;
-    log::info!("{:#?}", machine);
+    log::info!("\n{:#?}", machine);
 
     let drugstore_conf_name = "Drugstore.toml";
     let drugstore_conf = Conf {
@@ -41,9 +46,14 @@ fn main() -> anyhow::Result<()> {
         template: include_str!("../../templates/Drugstore.toml"),
         path: machine.repo.join(drugstore_conf_name),
     };
+    log::info!(
+        "\nreading drugstore_conf: \n\tname: {}\n\tpath: {}",
+        drugstore_conf.name,
+        drugstore_conf.path.display()
+    );
     let store_buf = drugstore_conf.ensure()?.read()?;
     let store: Drugstore = (&toml::from_str(&store_buf)?, &machine).try_into()?;
-    log::info!("{:#?}", store);
+    log::info!("\n{:#?}", store);
 
     let repo = Repository::open(&machine.repo).expect("failed to open repo");
 
