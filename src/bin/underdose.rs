@@ -74,38 +74,36 @@ fn main() -> anyhow::Result<()> {
     return Ok(());
 
     for (name, pill) in &store.pills {
-        for drip in &pill.drips {
-            if !drip.check_env(&machine.env) {
-                continue;
-            }
-            let drip_task = drip.syn(TaskArrow::SiteToRepo)?;
-            match drip_task {
-                DripTask::GitModule { remote, .. } => {}
-                DripTask::Addicted { ref atoms } => {
-                    log::info!(
-                        "\n[[{}]]::site_to_repo: {:#?}",
-                        name,
-                        atoms
-                            .iter()
-                            .map(|task| { format!("{}", task) })
-                            .collect::<Vec<String>>()
-                    );
-                }
-            }
-
-            // let mut response = String::new();
-            // print!("proceed?");
-            // io::stdout().flush();
-            // {
-            //     let stdin = io::stdin();
-            //     stdin.read_line(&mut response)?;
-            // }
-
-            // if (response.to_lowercase().starts_with('y')) {
-            //     println!("executing...");
-            //     drip_task.exec()?;
-            // }
+        if !pill.drip.check_env(&machine.env) {
+            continue;
         }
+        let drip_task = pill.drip.syn(TaskArrow::SiteToRepo)?;
+        match drip_task {
+            DripTask::GitModule { remote, .. } => {}
+            DripTask::Addicted { ref atoms } => {
+                log::info!(
+                    "\n[[{}]]::site_to_repo: {:#?}",
+                    name,
+                    atoms
+                        .iter()
+                        .map(|task| { format!("{}", task) })
+                        .collect::<Vec<String>>()
+                );
+            }
+        }
+
+        // let mut response = String::new();
+        // print!("proceed?");
+        // io::stdout().flush();
+        // {
+        //     let stdin = io::stdin();
+        //     stdin.read_line(&mut response)?;
+        // }
+
+        // if (response.to_lowercase().starts_with('y')) {
+        //     println!("executing...");
+        //     drip_task.exec()?;
+        // }
     }
     Ok(())
 }
