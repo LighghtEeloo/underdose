@@ -8,7 +8,6 @@ use std::{
     collections::{HashMap, HashSet},
     path::PathBuf,
 };
-use toml::from_str;
 
 use crate::AtomMode;
 
@@ -18,7 +17,7 @@ pub struct Machine {
     pub repo: PathBuf,
     pub sync: AtomMode,
     pub undo: usize,
-    pub regex: bool,
+    pub glob: bool,
     pub incr: bool,
     pub git: bool,
     pub symlink: bool,
@@ -30,7 +29,7 @@ impl FromStr for Machine {
     type Err = anyhow::Error;
 
     fn from_str(buf: &str) -> anyhow::Result<Self> {
-        let toml: toml::Value = from_str(&buf).unwrap();
+        let toml: toml::Value = toml::from_str(&buf)?;
         let env = toml["env"]
             .as_array()
             .ok_or_else(|| anyhow::anyhow!("env is not an array"))?
@@ -68,9 +67,9 @@ impl FromStr for Machine {
         };
 
         let enabled = &toml["enabled"];
-        let regex = enabled["regex"]
+        let glob = enabled["glob"]
             .as_bool()
-            .ok_or_else(|| anyhow::anyhow!("enabled.regex is missing"))?;
+            .ok_or_else(|| anyhow::anyhow!("enabled.glob is missing"))?;
         let incr = enabled["incr"]
             .as_bool()
             .ok_or_else(|| anyhow::anyhow!("enabled.incr is missing"))?;
@@ -89,18 +88,14 @@ impl FromStr for Machine {
             .as_bool()
             .ok_or_else(|| anyhow::anyhow!("cleanup.empty_dir.repo is missing"))?;
 
-        if toml.get("tutorial").is_some() {
-            if let Some(true) = toml["tutorial"].as_bool() {
-                Err(anyhow::anyhow!("tutorial has not been completed yet"))?;
-            }
-        }
+        crate::utils::passed_tutorial(&toml)?;
 
         Ok(Self {
             env,
             repo,
             sync,
             undo,
-            regex,
+            glob,
             incr,
             git,
             symlink,

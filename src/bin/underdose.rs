@@ -14,7 +14,7 @@ use underdose::{
     utils::Conf,
     Atom,
     AtomMode::{self, *},
-    Drip, DripVariant, DrugStore, Machine, Pill,
+    Drip, DripVariant, Drugstore, Machine, Pill,
 };
 
 fn main() -> anyhow::Result<()> {
@@ -35,6 +35,16 @@ fn main() -> anyhow::Result<()> {
     let machine = machine_buf.parse::<Machine>()?;
     log::info!("{:#?}", machine);
 
+    let drugstore_conf_name = "Drugstore.toml";
+    let drugstore_conf = Conf {
+        name: drugstore_conf_name.to_string(),
+        template: include_str!("../../templates/Drugstore.toml"),
+        path: machine.repo.join(drugstore_conf_name),
+    };
+    let store_buf = drugstore_conf.ensure()?.read()?;
+    let store = store_buf.parse::<Drugstore>()?;
+    log::info!("{:#?}", store);
+
     let repo = Repository::open(&machine.repo).expect("failed to open repo");
 
     let statuses = repo.statuses(None)?;
@@ -51,48 +61,49 @@ fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let store = DrugStore {
-        env: HashMap::new(),
-        pills: HashMap::from([
-            (
-                format!("nvim"),
-                Pill {
-                    drips: Vec::from([Drip {
-                        env: HashSet::new(),
-                        root: Atom {
-                            site: home_path.join(".config/nvim/"),
-                            repo: machine.repo.join("neovim/"),
-                            mode: AtomMode::Link,
-                        },
-                        var: DripVariant::GitModule {
-                            remote: "git@github.com:NvChad/NvChad.git".to_string(),
-                        },
-                    }]),
-                },
-            ),
-            (
-                format!("yoru-awesome"),
-                Pill {
-                    drips: Vec::from([Drip {
-                        env: HashSet::new(),
-                        root: Atom {
-                            site: home_path.join(".config/awesome/"),
-                            repo: machine.repo.join("yoru-awesome/"),
-                            mode: AtomMode::FileCopy,
-                        },
-                        var: DripVariant::UnderManage {
-                            stem: Vec::from([Atom {
-                                site: format!("./").into(),
-                                repo: format!("./").into(),
-                                mode: FileCopy,
-                            }]),
-                        },
-                    }]),
-                },
-            ),
-        ]),
-        tutorial: None,
-    };
+    return Ok(());
+    // let store = Drugstore {
+    //     env: HashMap::new(),
+    //     pills: HashMap::from([
+    //         (
+    //             format!("nvim"),
+    //             Pill {
+    //                 drips: Vec::from([Drip {
+    //                     env: HashSet::new(),
+    //                     root: Atom {
+    //                         site: home_path.join(".config/nvim/"),
+    //                         repo: machine.repo.join("neovim/"),
+    //                         mode: AtomMode::Link,
+    //                     },
+    //                     var: DripVariant::GitModule {
+    //                         remote: "git@github.com:NvChad/NvChad.git".to_string(),
+    //                     },
+    //                 }]),
+    //             },
+    //         ),
+    //         (
+    //             format!("yoru-awesome"),
+    //             Pill {
+    //                 drips: Vec::from([Drip {
+    //                     env: HashSet::new(),
+    //                     root: Atom {
+    //                         site: home_path.join(".config/awesome/"),
+    //                         repo: machine.repo.join("yoru-awesome/"),
+    //                         mode: AtomMode::FileCopy,
+    //                     },
+    //                     var: DripVariant::UnderManage {
+    //                         stem: Vec::from([Atom {
+    //                             site: format!("./").into(),
+    //                             repo: format!("./").into(),
+    //                             mode: FileCopy,
+    //                         }]),
+    //                     },
+    //                 }]),
+    //             },
+    //         ),
+    //     ]),
+    //     tutorial: None,
+    // };
 
     for (name, pill) in &store.pills {
         for drip in &pill.drips {

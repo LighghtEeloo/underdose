@@ -17,16 +17,16 @@ undo = 10
 
 [enabled]
 
-# turn on regex patterns everywhere
-regex = false
+# git repo support: drip level submodule detection; automatically moves
+# submodule to the drugstore
+git = true
+
+# turn on glob patterns everywhere
+glob = false
 
 # incremental drip configurations: the final configuration is made up of every
 # valid drip (that survived env filter)
 incr = false
-
-# git repo support: drip level submodule detection; automatically moves
-# submodule to the drugstore
-git = true
 
 # sync local symlinks in settings (not implemented)
 symlink = false
@@ -38,4 +38,4 @@ repo = true
 
 # After carefully editing the rest of the file, remove this line and below to
 # make this `Underdose.toml` file valid and ready to use.
-tutorial = true
+[tutorial]

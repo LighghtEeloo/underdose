@@ -3,25 +3,25 @@ use std::fmt::Display;
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
+use std::str::FromStr;
 use std::{
     collections::{HashMap, HashSet},
     path::PathBuf,
 };
 
-#[derive(Serialize, Deserialize)]
-pub struct DrugStore {
+#[derive(Debug)]
+pub struct Drugstore {
     /// a map of name -> upward dependencies, up to the root
     pub env: HashMap<String, HashSet<String>>,
     pub pills: HashMap<String, Pill>,
-    pub tutorial: Option<()>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Pill {
     pub drips: Vec<Drip>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Drip {
     /// env is resolved to trivial form during parsing
     pub env: HashSet<String>,
@@ -31,7 +31,7 @@ pub struct Drip {
     pub var: DripVariant,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub enum DripVariant {
     GitModule {
         remote: String,
@@ -42,7 +42,7 @@ pub enum DripVariant {
     },
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Atom {
     pub site: PathBuf,
     pub repo: PathBuf,
@@ -72,5 +72,48 @@ impl Display for AtomMode {
             AtomMode::FileCopy => write!(f, "copy"),
             AtomMode::Link => write!(f, "link"),
         }
+    }
+}
+
+impl FromStr for Drugstore {
+    type Err = anyhow::Error;
+
+    fn from_str(buf: &str) -> anyhow::Result<Self> {
+        let toml: toml::Value = toml::from_str(&buf)?;
+
+        let mut env = HashMap::new();
+        fn register_env<'e>(
+            env: &mut HashMap<String, HashSet<String>>,
+            worklist: &mut Vec<&'e str>,
+            toml: &'e toml::Value,
+        ) {
+            fn register<'e>(
+                env: &mut HashMap<String, HashSet<String>>,
+                worklist: &Vec<&'e str>,
+                s: &'e str,
+            ) {
+                env.entry(s.to_owned())
+                    .or_default()
+                    .extend(worklist.clone().into_iter().map(ToOwned::to_owned))
+            };
+            if let Some(s) = toml.as_str() {
+                register(env, worklist, s);
+            } else if let Some(m) = toml.as_table() {
+                for (k, v) in m {
+                    register(env, worklist, k);
+                    worklist.push(k);
+                    register_env(env, worklist, v);
+                    worklist.pop();
+                }
+            }
+        }
+        register_env(&mut env, &mut Vec::new(), &toml["env"]);
+
+        crate::utils::passed_tutorial(&toml)?;
+
+        Ok(Self {
+            env,
+            pills: HashMap::new(),
+        })
     }
 }

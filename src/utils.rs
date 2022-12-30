@@ -21,3 +21,11 @@ impl Conf {
         Ok(buf)
     }
 }
+
+#[must_use]
+pub fn passed_tutorial(toml: &toml::Value) -> anyhow::Result<()> {
+    if toml.get("tutorial").is_some() {
+        Err(anyhow::anyhow!("tutorial has not been completed yet"))?;
+    }
+    Ok(())
+}
