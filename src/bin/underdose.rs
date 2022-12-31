@@ -51,7 +51,8 @@ fn main() -> anyhow::Result<()> {
         drugstore_conf.path.display()
     );
     let store_buf = drugstore_conf.ensure_exist()?.read()?;
-    let store: Drugstore = (&toml::from_str(&store_buf)?, &machine).try_into()?;
+    let store: Drugstore =
+        (&toml::from_str(&store_buf)?, &machine).try_into()?;
     log::debug!("\n{:#?}", store);
 
     // open drugstore repo

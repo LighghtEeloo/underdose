@@ -18,7 +18,9 @@ pub use TaskArrow::*;
 
 pub trait Synthesis {
     type Task;
-    fn synthesis(&self, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task>;
+    fn synthesis(
+        &self, machine: &Machine, arrow: TaskArrow,
+    ) -> anyhow::Result<Self::Task>;
 }
 
 pub trait Exec {
@@ -92,14 +94,15 @@ mod synthesis {
     impl Synthesis for Pill {
         type Task = PillTask;
 
-        fn synthesis(&self, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
+        fn synthesis(
+            &self, machine: &Machine, arrow: TaskArrow,
+        ) -> anyhow::Result<Self::Task> {
             let ref name = self.name;
             let ref drip = self.drip;
             log::trace!("synthesizing drip <{}>", name);
-            let root = drip
-                .root
-                .as_ref()
-                .ok_or_else(|| anyhow::anyhow!("no root set for drip <{}>", name))?;
+            let root = drip.root.as_ref().ok_or_else(|| {
+                anyhow::anyhow!("no root set for drip <{}>", name)
+            })?;
             match &drip.inner {
                 Some(DripInner::GitModule { remote }) => Ok(PillTask {
                     name: name.to_owned(),
@@ -118,7 +121,11 @@ mod synthesis {
                         atoms: AddictedDrip {
                             root,
                             stem,
-                            ignore_set: &machine.ignore.clone().chain(ignore.iter()).build(),
+                            ignore_set: &machine
+                                .ignore
+                                .clone()
+                                .chain(ignore.iter())
+                                .build(),
                             machine,
                         }
                         .resolve_atoms(arrow)?,
@@ -139,10 +146,7 @@ mod synthesis {
 
     impl<'a> AddictedDrip<'a> {
         fn atoms_copy(
-            self,
-            tasks: &mut Vec<AtomTask>,
-            src: &Path,
-            dst: &Path,
+            self, tasks: &mut Vec<AtomTask>, src: &Path, dst: &Path,
         ) -> anyhow::Result<()> {
             let src = utils::canonicalize_parent(src)?;
             let dst = utils::trim_path(dst)?;
@@ -158,7 +162,8 @@ mod synthesis {
                 for entry in src.read_dir().expect("read_dir failed") {
                     let entry = entry.expect("entry failed");
                     let src_path = entry.path();
-                    let file_name = src_path.file_name().expect("file_name failed");
+                    let file_name =
+                        src_path.file_name().expect("file_name failed");
                     let dst_path = dst.join(file_name);
                     self.atoms_copy(tasks, &src_path, &dst_path)?;
                 }
@@ -168,14 +173,18 @@ mod synthesis {
             Ok(())
         }
         /// Resolve stem atoms to absolute file paths; requires a direction
-        fn resolve_atoms(self, arrow: TaskArrow) -> anyhow::Result<Vec<AtomTask>> {
+        fn resolve_atoms(
+            self, arrow: TaskArrow,
+        ) -> anyhow::Result<Vec<AtomTask>> {
             let AddictedDrip { root, stem, .. } = self;
             let mut tasks = Vec::new();
             for atom in stem {
                 if matches!(atom.mode, AtomMode::Link) {
                     // Note: symlinks always have repo -> site orientation
                     tasks.push(AtomTask {
-                        src: utils::canonicalize_parent(root.repo.join(&atom.repo))?,
+                        src: utils::canonicalize_parent(
+                            root.repo.join(&atom.repo),
+                        )?,
                         dst: utils::trim_path(root.site.join(&atom.site))?,
                         mode: AtomMode::Link,
                     })
@@ -184,7 +193,11 @@ mod synthesis {
                         SiteToRepo => (&atom.site, &atom.repo),
                         RepoToSite => (&atom.repo, &atom.site),
                     };
-                    self.atoms_copy(&mut tasks, &root.site.join(src), &root.repo.join(dst))?
+                    self.atoms_copy(
+                        &mut tasks,
+                        &root.site.join(src),
+                        &root.repo.join(dst),
+                    )?
                 }
             }
             Ok(tasks)
@@ -194,7 +207,9 @@ mod synthesis {
     impl Synthesis for Atom {
         type Task = AtomTask;
 
-        fn synthesis(&self, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
+        fn synthesis(
+            &self, machine: &Machine, arrow: TaskArrow,
+        ) -> anyhow::Result<Self::Task> {
             log::trace!("synthesizing atom <{:?}>", self);
             Ok(match arrow {
                 SiteToRepo => AtomTask {
@@ -235,11 +250,9 @@ mod exec {
 
     impl Exec for AtomTask {
         fn exec(self) -> anyhow::Result<()> {
-            fs::create_dir_all(
-                self.dst
-                    .parent()
-                    .ok_or_else(|| anyhow::anyhow!("no parent for destination"))?,
-            )?;
+            fs::create_dir_all(self.dst.parent().ok_or_else(|| {
+                anyhow::anyhow!("no parent for destination")
+            })?)?;
             if self.dst.exists() {
                 Prompt::new(&format!(
                     "target <{}> already exists.\noverwrite? [N/y/!] ",
@@ -256,7 +269,10 @@ mod exec {
                         }
                         "!" => {
                             println!("abort!");
-                            Err(io::Error::new(io::ErrorKind::Other, "abort!"))?;
+                            Err(io::Error::new(
+                                io::ErrorKind::Other,
+                                "abort!",
+                            ))?;
                         }
                         _ => {
                             println!("skipping...");
@@ -282,9 +298,13 @@ mod exec {
                     #[cfg(windows)]
                     {
                         if self.src.is_file() {
-                            std::os::windows::fs::symlink_file(&self.src, &self.dst)?;
+                            std::os::windows::fs::symlink_file(
+                                &self.src, &self.dst,
+                            )?;
                         } else if self.src.is_dir() {
-                            std::os::windows::fs::symlink_dir(&self.src, &self.dst)?;
+                            std::os::windows::fs::symlink_dir(
+                                &self.src, &self.dst,
+                            )?;
                         }
                     }
                 }

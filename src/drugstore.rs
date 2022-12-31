@@ -24,7 +24,10 @@ impl EnvMap {
         let mut res = HashSet::new();
         for tag in &machine.env {
             let deps = self.map.get(tag).ok_or_else(|| {
-                anyhow::anyhow!("tag {} is not defined in env dependency map", tag)
+                anyhow::anyhow!(
+                    "tag {} is not defined in env dependency map",
+                    tag
+                )
             })?;
             res.extend(deps.to_owned());
         }
@@ -109,7 +112,9 @@ impl<'a> DripApplyIncr<'a> {
     fn apply_force(&mut self, drip: Drip) -> anyhow::Result<()> {
         use DripInner::*;
         self.drip.root = match (drip.root, self.drip.root.clone()) {
-            (Some(_), Some(_)) => Err(anyhow::anyhow!("root set multiple times"))?,
+            (Some(_), Some(_)) => {
+                Err(anyhow::anyhow!("root set multiple times"))?
+            }
             (new @ Some(_), _) => new,
             (None, old) => old,
         };
@@ -133,7 +138,9 @@ impl<'a> DripApplyIncr<'a> {
         };
         Ok(())
     }
-    fn apply_incr(mut self, drips: Vec<(HashSet<String>, Drip)>) -> anyhow::Result<Drip> {
+    fn apply_incr(
+        mut self, drips: Vec<(HashSet<String>, Drip)>,
+    ) -> anyhow::Result<Drip> {
         for (tags, drip) in drips {
             if self.envset.check_all(&tags) {
                 self.apply_force(drip)?;
@@ -180,21 +187,21 @@ mod parse {
     impl TryFrom<(&toml::Value, &Machine)> for Drugstore {
         type Error = anyhow::Error;
 
-        fn try_from((toml, machine): (&toml::Value, &Machine)) -> anyhow::Result<Self> {
+        fn try_from(
+            (toml, machine): (&toml::Value, &Machine),
+        ) -> anyhow::Result<Self> {
             let mut envmap = HashMap::new();
             fn register_env<'e>(
                 env: &mut HashMap<String, HashSet<String>>,
-                worklist: &mut Vec<&'e str>,
-                toml: &'e toml::Value,
+                worklist: &mut Vec<&'e str>, toml: &'e toml::Value,
             ) {
                 fn register<'e>(
                     env: &mut HashMap<String, HashSet<String>>,
-                    worklist: &Vec<&'e str>,
-                    s: &'e str,
+                    worklist: &Vec<&'e str>, s: &'e str,
                 ) {
-                    env.entry(s.to_owned())
-                        .or_default()
-                        .extend(worklist.clone().into_iter().map(ToOwned::to_owned))
+                    env.entry(s.to_owned()).or_default().extend(
+                        worklist.clone().into_iter().map(ToOwned::to_owned),
+                    )
                 }
                 if let Some(s) = toml.as_str() {
                     register(env, worklist, s);
@@ -218,20 +225,24 @@ mod parse {
                     for pill in pills_raw {
                         let name = pill["name"]
                             .as_str()
-                            .ok_or_else(|| anyhow::anyhow!("pill name is not string"))?
+                            .ok_or_else(|| {
+                                anyhow::anyhow!("pill name is not string")
+                            })?
                             .to_owned();
 
                         if pills.contains_key(&name) {
                             Err(anyhow::anyhow!("duplicated pill name"))?
                         }
 
-                        let drips_raw = pill["drip"]
-                            .as_array()
-                            .ok_or_else(|| anyhow::anyhow!("drips are not in an array"))?;
+                        let drips_raw =
+                            pill["drip"].as_array().ok_or_else(|| {
+                                anyhow::anyhow!("drips are not in an array")
+                            })?;
 
                         let mut drips = Vec::new();
                         for drip_raw in drips_raw {
-                            let conf: DripConf = (drip_raw, &name, machine).try_into()?;
+                            let conf: DripConf =
+                                (drip_raw, &name, machine).try_into()?;
                             drips.push((
                                 conf.tags,
                                 Drip {
@@ -243,7 +254,8 @@ mod parse {
 
                         let pill = Pill {
                             name: name.to_owned(),
-                            drip: DripApplyIncr::new(&envset).apply_incr(drips)?,
+                            drip: DripApplyIncr::new(&envset)
+                                .apply_incr(drips)?,
                         };
 
                         if pill.non_empty() {
@@ -280,26 +292,31 @@ mod parse {
                         .into_iter()
                         .map(|e| match e.as_str() {
                             Some(s) => Ok(s.to_string()),
-                            None => Err(anyhow::anyhow!("env item is not a string")),
+                            None => {
+                                Err(anyhow::anyhow!("env item is not a string"))
+                            }
                         })
                         .collect::<anyhow::Result<HashSet<String>>>()
                 },
             )?;
 
-            let root = if let Some(root) = toml.get("root") {
-                let quasi = AtomConf::try_from(root)?;
-                Some(Atom {
-                    site: utils::expand_path(
-                        quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?,
-                    )?,
-                    repo: utils::ensured_dir(
-                        machine.repo.join(quasi.repo.unwrap_or_else(|| name.into())),
-                    )?,
-                    mode: quasi.mode.unwrap_or_else(|| machine.sync),
-                })
-            } else {
-                None
-            };
+            let root =
+                if let Some(root) = toml.get("root") {
+                    let quasi = AtomConf::try_from(root)?;
+                    Some(Atom {
+                        site: utils::expand_path(quasi.site.ok_or_else(
+                            || anyhow::anyhow!("no site found"),
+                        )?)?,
+                        repo: utils::ensured_dir(
+                            machine.repo.join(
+                                quasi.repo.unwrap_or_else(|| name.into()),
+                            ),
+                        )?,
+                        mode: quasi.mode.unwrap_or_else(|| machine.sync),
+                    })
+                } else {
+                    None
+                };
 
             let remote = if let Some(remote) = toml.get("remote") {
                 remote.as_str().map(ToOwned::to_owned)
@@ -311,10 +328,14 @@ mod parse {
                     let mut stems = Vec::new();
                     for stem in stems_raw {
                         let quasi = AtomConf::try_from(stem)?;
-                        let site = quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?;
+                        let site = quasi
+                            .site
+                            .ok_or_else(|| anyhow::anyhow!("no site found"))?;
                         stems.push(Atom {
                             site: utils::expand_path(site.clone())?,
-                            repo: utils::expand_path(quasi.repo.unwrap_or(site))?,
+                            repo: utils::expand_path(
+                                quasi.repo.unwrap_or(site),
+                            )?,
                             mode: quasi.mode.unwrap_or(machine.sync),
                         });
                     }
@@ -329,9 +350,9 @@ mod parse {
                 if let Some(ignore_raw) = ignore.as_array() {
                     let mut ignore = Vec::new();
                     for i in ignore_raw {
-                        let i = i
-                            .as_str()
-                            .ok_or_else(|| anyhow::anyhow!("ignore item is not a string"))?;
+                        let i = i.as_str().ok_or_else(|| {
+                            anyhow::anyhow!("ignore item is not a string")
+                        })?;
                         ignore.push(i.to_owned());
                     }
                     Some(ignore)
@@ -375,8 +396,7 @@ mod parse {
                 })
             } else if let Some(value) = value.as_table() {
                 fn as_path(
-                    entry: &str,
-                    value: &toml::value::Map<String, toml::Value>,
+                    entry: &str, value: &toml::value::Map<String, toml::Value>,
                 ) -> Option<PathBuf> {
                     value
                         .get(entry)

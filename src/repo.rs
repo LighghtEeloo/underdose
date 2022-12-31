@@ -20,10 +20,13 @@ impl<'a> Display for Dirt<'a> {
 }
 
 impl<'a> Dirt<'a> {
-    pub fn of_repo_status(statuses: &'a Statuses) -> anyhow::Result<Vec<Dirt<'a>>> {
+    pub fn of_repo_status(
+        statuses: &'a Statuses,
+    ) -> anyhow::Result<Vec<Dirt<'a>>> {
         let mut dirts = Vec::new();
-        let file_to_path =
-            |file: DiffFile<'a>| file.path().ok_or_else(|| anyhow::anyhow!("file path err"));
+        let file_to_path = |file: DiffFile<'a>| {
+            file.path().ok_or_else(|| anyhow::anyhow!("file path err"))
+        };
         for status in statuses.iter() {
             match status.index_to_workdir() {
                 None => (),

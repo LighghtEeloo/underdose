@@ -14,7 +14,9 @@ impl Conf<'_> {
     pub fn ensure_exist(self) -> anyhow::Result<Self> {
         // self.path = canonicalize_parent(&self.path)?;
         if !self.path.exists() {
-            std::fs::create_dir_all(self.path.parent().expect("config path should have parent"))?;
+            std::fs::create_dir_all(
+                self.path.parent().expect("config path should have parent"),
+            )?;
             std::fs::write(&self.path, self.template)?;
         }
         Ok(self)
@@ -22,7 +24,9 @@ impl Conf<'_> {
     pub fn ensure_force(self) -> anyhow::Result<Self> {
         // self.path = canonicalize_parent(&self.path)?;
         if !self.path.exists() {
-            std::fs::create_dir_all(self.path.parent().expect("config path should have parent"))?;
+            std::fs::create_dir_all(
+                self.path.parent().expect("config path should have parent"),
+            )?;
         }
         std::fs::write(&self.path, self.template)?;
         Ok(self)
@@ -61,23 +65,25 @@ pub fn expand_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
 
 pub fn canonicalize_parent<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
     let path = expand_path(path)?;
-    let parent = path
-        .parent()
-        .ok_or_else(|| anyhow::anyhow!("path <{}> should have parent", path.display()))?;
-    let file_name = path
-        .file_name()
-        .ok_or_else(|| anyhow::anyhow!("path <{}> should have file name", path.display()))?;
+    let parent = path.parent().ok_or_else(|| {
+        anyhow::anyhow!("path <{}> should have parent", path.display())
+    })?;
+    let file_name = path.file_name().ok_or_else(|| {
+        anyhow::anyhow!("path <{}> should have file name", path.display())
+    })?;
     let parent = parent.canonicalize()?;
     Ok(parent.join(file_name))
 }
 
 pub fn trim_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
-    let par = path
-        .as_ref()
-        .parent()
-        .ok_or_else(|| anyhow::anyhow!("path <{}> should have parent", path.as_ref().display()))?;
+    let par = path.as_ref().parent().ok_or_else(|| {
+        anyhow::anyhow!("path <{}> should have parent", path.as_ref().display())
+    })?;
     let file_name = path.as_ref().file_name().ok_or_else(|| {
-        anyhow::anyhow!("path <{}> should have file name", path.as_ref().display())
+        anyhow::anyhow!(
+            "path <{}> should have file name",
+            path.as_ref().display()
+        )
     })?;
     let file_name = file_name
         .to_str()
@@ -97,7 +103,9 @@ impl IgnoreSetBuilder {
         let globs = GlobSetBuilder::new();
         Self { globs }
     }
-    pub fn chain(mut self, ignore: impl Iterator<Item = impl AsRef<str>>) -> Self {
+    pub fn chain(
+        mut self, ignore: impl Iterator<Item = impl AsRef<str>>,
+    ) -> Self {
         for p in ignore {
             let p = p.as_ref();
             self.globs.add(
@@ -136,8 +144,7 @@ impl<'a> Prompt<'a> {
     }
 
     pub fn process(
-        self,
-        cont_lower_trim: impl FnOnce(&str) -> anyhow::Result<()>,
+        self, cont_lower_trim: impl FnOnce(&str) -> anyhow::Result<()>,
     ) -> anyhow::Result<()> {
         let mut response = String::new();
         print!("{}", self.line);
