@@ -6,7 +6,7 @@ use git2::Repository;
 use std::io;
 use underdose::{
     repo::Dirt,
-    task::{DripTask, Exec, Synthesis, TaskArrow},
+    task::{Exec, PillTask, Synthesis, TaskArrow},
     utils::{Conf, Prompt},
     Drugstore, Machine,
 };
@@ -33,9 +33,14 @@ fn main() -> anyhow::Result<()> {
     // write local conf to drugstore/.underdose/<name>.toml
     Conf {
         template: &machine_buf,
-        path: machine.repo.join(".underdose").join(&format!("{}.toml", machine.name)),
-    }.ensure_force()?;
+        path: machine
+            .repo
+            .join(".underdose")
+            .join(&format!("{}.toml", machine.name)),
+    }
+    .ensure_force()?;
 
+    // read drugstore_conf into store
     let drugstore_conf_name = "Drugstore.toml";
     let drugstore_conf = Conf {
         template: include_str!("../../templates/Drugstore.toml"),
@@ -49,41 +54,24 @@ fn main() -> anyhow::Result<()> {
     let store: Drugstore = (&toml::from_str(&store_buf)?, &machine).try_into()?;
     log::debug!("\n{:#?}", store);
 
+    // open drugstore repo
     let repo = Repository::open(&machine.repo).expect("failed to open repo");
 
+    // check if worktree is clean
     let statuses = repo.statuses(None)?;
     let dirts = Dirt::of_repo_status(&statuses)?;
     if !dirts.is_empty() {
         println!("Worktree not clean!");
-        println!(
-            "{:#?}",
-            dirts
-                .into_iter()
-                .map(|dirt| { format!("{}", dirt) })
-                .collect::<Vec<String>>()
-        );
+        for dirt in dirts {
+            println!("{}", dirt);
+        }
         return Ok(());
     }
 
+    // synthesize and execute tasks
     for (name, pill) in &store.pills {
-        let drip_task = pill.drip.synthesis(name, &machine, TaskArrow::RepoToSite)?;
-        match &drip_task {
-            DripTask::GitModule { remote, .. } => {}
-            DripTask::Addicted {
-                ref root,
-                ref atoms,
-            } => {
-                log::info!(
-                    "\n[[{}]] {} {:#?}",
-                    name,
-                    root,
-                    atoms
-                        .iter()
-                        .map(|task| { format!("{}", task) })
-                        .collect::<Vec<String>>()
-                );
-            }
-        }
+        let drip_task = pill.synthesis(&machine, TaskArrow::RepoToSite)?;
+        println!("{}: {}", name, drip_task);
 
         Prompt::new("proceed? [N/y/!] ").process(|s| {
             match s {
@@ -102,5 +90,7 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         })?;
     }
+
+    println!();
     Ok(())
 }

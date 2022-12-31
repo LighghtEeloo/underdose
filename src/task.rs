@@ -1,6 +1,7 @@
-use crate::drugstore::{Atom, AtomMode, Drip, DripVariant};
+use crate::drugstore::{Atom, AtomMode, Drip, DripVariant, Pill};
 use crate::utils;
 use crate::Machine;
+use colored::Colorize;
 use git_url_parse::GitUrl;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -21,22 +22,40 @@ pub use TaskArrow::*;
 
 pub trait Synthesis {
     type Task;
-    fn synthesis(&self, name: &str, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task>;
+    fn synthesis(&self, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task>;
 }
 
 pub trait Exec {
     fn exec(self) -> anyhow::Result<()>;
 }
 
-pub enum DripTask {
-    GitModule {
-        root: AtomTask,
-        remote: Box<GitUrl>,
-    },
-    Addicted {
-        root: AtomTask,
-        atoms: Vec<AtomTask>,
-    },
+pub struct PillTask {
+    pub name: String,
+    pub root: AtomTask,
+    pub inner: PillTaskInner,
+}
+
+pub enum PillTaskInner {
+    GitModule { remote: Box<GitUrl> },
+    Addicted { atoms: Vec<AtomTask> },
+}
+
+impl Display for PillTask {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.inner {
+            PillTaskInner::GitModule { remote } => {
+                write!(f, "")?;
+            }
+            PillTaskInner::Addicted { atoms } => {
+                writeln!(f, "\n[[{}]]", self.name)?;
+                writeln!(f, "|| {}", self.root)?;
+                for atom in atoms {
+                    writeln!(f, "      || {}", atom)?;
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 pub struct AtomTask {
@@ -47,12 +66,23 @@ pub struct AtomTask {
 
 impl Display for AtomTask {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mode = {
+            let mode = format!("{}", self.mode);
+            match self.mode {
+                AtomMode::FileCopy => mode.bright_yellow(),
+                AtomMode::Link => mode.blue(),
+            }
+        };
+        let arrow = match self.mode {
+            AtomMode::FileCopy => "==>".bright_yellow(),
+            AtomMode::Link => "~~>".blue(),
+        };
         write!(
             f,
             "{} :: [{}] {} [{}]",
-            self.mode,
+            mode,
             self.src.display(),
-            self.mode.display_arrow(),
+            arrow,
             self.dst.display()
         )
     }
@@ -61,31 +91,39 @@ impl Display for AtomTask {
 mod synthesis {
     use super::*;
 
-    impl Synthesis for Drip {
-        type Task = DripTask;
+    impl Synthesis for Pill {
+        type Task = PillTask;
 
-        fn synthesis(&self, name: &str, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
+        fn synthesis(&self, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
+            let ref name = self.name;
+            let ref drip = self.drip;
             log::trace!("synthesizing drip <{}>", name);
-            let root = self
+            let root = drip
                 .root
                 .as_ref()
                 .ok_or_else(|| anyhow::anyhow!("no root set for drip <{}>", name))?;
-            match &self.var {
-                Some(DripVariant::GitModule { remote }) => Ok(DripTask::GitModule {
-                    root: root.synthesis(name, machine, arrow)?,
-                    remote: match remote.parse() {
-                        Ok(url) => Box::new(url),
-                        Err(e) => Err(anyhow::anyhow!("{:?}", e))?,
+            match &drip.var {
+                Some(DripVariant::GitModule { remote }) => Ok(PillTask {
+                    name: name.to_owned(),
+                    root: root.synthesis(machine, arrow)?,
+                    inner: PillTaskInner::GitModule {
+                        remote: match remote.parse() {
+                            Ok(url) => Box::new(url),
+                            Err(e) => Err(anyhow::anyhow!("{:?}", e))?,
+                        },
                     },
                 }),
-                Some(DripVariant::Addicted { stems }) => Ok(DripTask::Addicted {
-                    root: root.synthesis(name, machine, arrow)?,
-                    atoms: AddictedDrip {
-                        root,
-                        stems,
-                        machine,
-                    }
-                    .resolve_atoms(arrow)?,
+                Some(DripVariant::Addicted { stems }) => Ok(PillTask {
+                    name: name.to_owned(),
+                    root: root.synthesis(machine, arrow)?,
+                    inner: PillTaskInner::Addicted {
+                        atoms: AddictedDrip {
+                            root,
+                            stems,
+                            machine,
+                        }
+                        .resolve_atoms(arrow)?,
+                    },
                 }),
                 None => Err(anyhow::anyhow!("no variant set")),
             }
@@ -160,8 +198,8 @@ mod synthesis {
     impl Synthesis for Atom {
         type Task = AtomTask;
 
-        fn synthesis(&self, name: &str, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
-            log::trace!("synthesizing atom <{:?}> for drip <{}>", self, name);
+        fn synthesis(&self, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
+            log::trace!("synthesizing atom <{:?}>", self);
             Ok(match arrow {
                 SiteToRepo => AtomTask {
                     src: self.site.to_owned(),
@@ -185,11 +223,11 @@ mod exec {
 
     use super::*;
 
-    impl Exec for DripTask {
+    impl Exec for PillTask {
         fn exec(self) -> anyhow::Result<()> {
-            match self {
-                DripTask::GitModule { root, remote } => todo!(),
-                DripTask::Addicted { root, atoms } => {
+            match self.inner {
+                PillTaskInner::GitModule { remote } => todo!(),
+                PillTaskInner::Addicted { atoms } => {
                     for atom in atoms {
                         atom.exec()?;
                     }

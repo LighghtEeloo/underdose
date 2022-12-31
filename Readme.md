@@ -101,12 +101,11 @@ The following sections demonstrate the technical details of `underdose`.
 
 ### Roadmap
 
-- [ ] Simple git integration - a few helping hands could be useful, though we should never rewrite or wrap the whole git.
 - [ ] Automatic sync. Allow scheduled run for trivial tasks, but abort when anything complicated emerges. Useful for auto git fetch and pour when your remote drugstore updates.
 - [ ] Probe for changes during `ud sync` even without being asked to. It's like running `git fetch` from time to time without asking can actually save your time, but to your drips instead.
 - [ ] Symlink support. Treat symlink as the file it points to and keeps track of both the pointee and pointer, namely sync the file and create the symlink automatically.
-- [ ] Cascaded item under dir track. Assign a dir some option and some specific files other options.
-- [ ] Pattern in paths.
+- [x] Cascaded item under dir track. Assign a dir some option and some specific files other options.
+- [x] Globs in paths.
 - [ ] Hooks for pre- and post- actions.
 
 

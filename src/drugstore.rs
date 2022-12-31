@@ -1,4 +1,5 @@
 use crate::{utils, Machine};
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use std::fs::{self, File};
@@ -9,7 +10,6 @@ use std::{
     collections::{HashMap, HashSet},
     path::PathBuf,
 };
-use indexmap::IndexMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Drugstore {
@@ -53,6 +53,7 @@ impl EnvSet {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Pill {
+    pub name: String,
     pub drip: Drip,
 }
 
@@ -111,15 +112,6 @@ pub enum AtomMode {
     FileCopy,
     #[serde(rename = "link")]
     Link,
-}
-
-impl AtomMode {
-    pub fn display_arrow(&self) -> &'static str {
-        match self {
-            Self::FileCopy => "==>",
-            Self::Link => "~~>",
-        }
-    }
 }
 
 impl Display for AtomMode {
@@ -196,6 +188,7 @@ impl TryFrom<(&toml::Value, &Machine)> for Drugstore {
                     }
 
                     let pill = Pill {
+                        name: name.to_owned(),
                         drip: DripApplyIncr::new(&envset).apply_incr(drips)?,
                     };
 
