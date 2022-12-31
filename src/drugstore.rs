@@ -55,7 +55,7 @@ pub struct Pill {
 
 impl Pill {
     pub fn non_empty(&self) -> bool {
-        !self.drip.root.is_none() && !self.drip.var.is_none()
+        !self.drip.root.is_none() && !self.drip.inner.is_none()
     }
 }
 
@@ -64,7 +64,7 @@ pub struct Drip {
     pub root: Option<Atom>,
     /// variants
     #[serde(flatten)]
-    pub var: Option<DripInner>,
+    pub inner: Option<DripInner>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -74,7 +74,7 @@ pub struct DripConf {
     pub root: Option<Atom>,
     /// variants
     #[serde(flatten)]
-    pub var: Option<DripInner>,
+    pub inner: Option<DripInner>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -85,7 +85,9 @@ pub enum DripInner {
     },
     Addicted {
         /// Atoms are incremented from drips but dirs aren't expanded
-        stems: Vec<Atom>,
+        stem: Vec<Atom>,
+        /// ignore
+        ignore: Vec<String>,
     },
 }
 
@@ -99,7 +101,7 @@ impl<'a> DripApplyIncr<'a> {
         DripApplyIncr {
             drip: Drip {
                 root: None,
-                var: None,
+                inner: None,
             },
             envset,
         }
@@ -111,10 +113,20 @@ impl<'a> DripApplyIncr<'a> {
             (new @ Some(_), _) => new,
             (None, old) => old,
         };
-        self.drip.var = match (drip.var, self.drip.var.clone()) {
-            (Some(Addicted { stems: new }), Some(Addicted { stems: mut stem })) => {
-                stem.extend(new);
-                Some(Addicted { stems: stem })
+        self.drip.inner = match (drip.inner, self.drip.inner.clone()) {
+            (
+                Some(Addicted {
+                    stem: new_stem,
+                    ignore: new_ignore,
+                }),
+                Some(Addicted {
+                    mut stem,
+                    mut ignore,
+                }),
+            ) => {
+                stem.extend(new_stem);
+                ignore.extend(new_ignore);
+                Some(Addicted { stem, ignore })
             }
             (new @ Some(_), _) => new,
             (None, old) => old,
@@ -145,7 +157,7 @@ pub struct AtomConf {
     pub mode: Option<AtomMode>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AtomMode {
     #[serde(rename = "copy")]
     FileCopy,
@@ -224,7 +236,7 @@ mod parse {
                                 conf.tags,
                                 Drip {
                                     root: conf.root,
-                                    var: conf.var,
+                                    inner: conf.inner,
                                 },
                             ))
                         }
@@ -299,22 +311,32 @@ mod parse {
                     let mut stems = Vec::new();
                     for stem in stems_raw {
                         let quasi = AtomConf::try_from(stem)?;
+                        let site = quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?;
                         stems.push(Atom {
-                            site: utils::expand_path(
-                                quasi
-                                    .site
-                                    .clone()
-                                    .ok_or_else(|| anyhow::anyhow!("no site found"))?,
-                            )?,
-                            repo: utils::expand_path(
-                                quasi.repo.unwrap_or_else(|| quasi.site.unwrap()),
-                            )?,
-                            mode: quasi.mode.unwrap_or_else(|| machine.sync),
+                            site: utils::expand_path(site.clone())?,
+                            repo: utils::expand_path(quasi.repo.unwrap_or(site))?,
+                            mode: quasi.mode.unwrap_or(machine.sync),
                         });
                     }
                     Some(stems)
                 } else {
                     Err(anyhow::anyhow!("stem must be an array"))?
+                }
+            } else {
+                None
+            };
+            let ignore = if let Some(ignore) = toml.get("ignore") {
+                if let Some(ignore_raw) = ignore.as_array() {
+                    let mut ignore = Vec::new();
+                    for i in ignore_raw {
+                        let i = i
+                            .as_str()
+                            .ok_or_else(|| anyhow::anyhow!("ignore item is not a string"))?;
+                        ignore.push(i.to_owned());
+                    }
+                    Some(ignore)
+                } else {
+                    Err(anyhow::anyhow!("ignore must be an array"))?
                 }
             } else {
                 None
@@ -326,11 +348,18 @@ mod parse {
                     "can't have both git and stem at the same time"
                 ))?,
                 (Some(remote), None) => Some(GitModule { remote }),
-                (None, Some(stems)) => Some(Addicted { stems }),
+                (None, Some(stem)) => Some(Addicted {
+                    stem,
+                    ignore: ignore.unwrap_or_default(),
+                }),
                 (None, None) => None,
             };
 
-            Ok(Self { tags, root, var })
+            Ok(Self {
+                tags,
+                root,
+                inner: var,
+            })
         }
     }
 
@@ -374,5 +403,40 @@ mod parse {
                 Err(anyhow::anyhow!("root is neither a path nor an atom"))?
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn atom_conf_parse() {
+        let toml = r#"
+            site = "site"
+            repo = "repo"
+            mode = "copy"
+        "#;
+        let conf: AtomConf = toml::from_str(toml).unwrap();
+        assert_eq!(conf.site, Some(PathBuf::from("site")));
+        assert_eq!(conf.repo, Some(PathBuf::from("repo")));
+        assert_eq!(conf.mode, Some(AtomMode::FileCopy));
+
+        let toml = r#"
+            site = "site"
+            mode = "link"
+        "#;
+        let conf: AtomConf = toml::from_str(toml).unwrap();
+        assert_eq!(conf.site, Some(PathBuf::from("site")));
+        assert_eq!(conf.repo, None);
+        assert_eq!(conf.mode, Some(AtomMode::Link));
+
+        let toml = r#"
+            mode = "link"
+        "#;
+        let conf: AtomConf = toml::from_str(toml).unwrap();
+        assert_eq!(conf.site, None);
+        assert_eq!(conf.repo, None);
+        assert_eq!(conf.mode, Some(AtomMode::Link));
     }
 }

@@ -85,6 +85,8 @@ impl Display for AtomTask {
 }
 
 mod synthesis {
+    use crate::utils::{IgnoreSet, IgnoreSetBuilder};
+
     use super::*;
 
     impl Synthesis for Pill {
@@ -98,7 +100,7 @@ mod synthesis {
                 .root
                 .as_ref()
                 .ok_or_else(|| anyhow::anyhow!("no root set for drip <{}>", name))?;
-            match &drip.var {
+            match &drip.inner {
                 Some(DripInner::GitModule { remote }) => Ok(PillTask {
                     name: name.to_owned(),
                     root: root.synthesis(machine, arrow)?,
@@ -109,13 +111,14 @@ mod synthesis {
                         },
                     },
                 }),
-                Some(DripInner::Addicted { stems }) => Ok(PillTask {
+                Some(DripInner::Addicted { stem, ignore }) => Ok(PillTask {
                     name: name.to_owned(),
                     root: root.synthesis(machine, arrow)?,
                     inner: PillTaskInner::Addicted {
                         atoms: AddictedDrip {
                             root,
-                            stems,
+                            stem,
+                            ignore_set: &machine.ignore.clone().chain(ignore.iter()).build(),
                             machine,
                         }
                         .resolve_atoms(arrow)?,
@@ -129,7 +132,8 @@ mod synthesis {
     #[derive(Clone, Copy)]
     struct AddictedDrip<'a> {
         root: &'a Atom,
-        stems: &'a Vec<Atom>,
+        stem: &'a Vec<Atom>,
+        ignore_set: &'a IgnoreSet,
         machine: &'a Machine,
     }
 
@@ -142,7 +146,7 @@ mod synthesis {
         ) -> anyhow::Result<()> {
             let src = utils::canonicalize_parent(src)?;
             let dst = utils::trim_path(dst)?;
-            if self.machine.ignore.is_ignored(&src) {
+            if self.ignore_set.is_ignored(&src) {
                 log::debug!("ignoring {}", src.display())
             } else if src.is_file() {
                 tasks.push(AtomTask {
@@ -165,9 +169,9 @@ mod synthesis {
         }
         /// Resolve stem atoms to absolute file paths; requires a direction
         fn resolve_atoms(self, arrow: TaskArrow) -> anyhow::Result<Vec<AtomTask>> {
-            let AddictedDrip { root, stems, .. } = self;
+            let AddictedDrip { root, stem, .. } = self;
             let mut tasks = Vec::new();
-            for atom in stems {
+            for atom in stem {
                 if matches!(atom.mode, AtomMode::Link) {
                     // Note: symlinks always have repo -> site orientation
                     tasks.push(AtomTask {

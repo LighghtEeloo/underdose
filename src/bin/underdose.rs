@@ -69,9 +69,9 @@ fn main() -> anyhow::Result<()> {
     }
 
     // synthesize and execute tasks
-    for (name, pill) in &store.pills {
+    for (_, pill) in &store.pills {
         let drip_task = pill.synthesis(&machine, TaskArrow::RepoToSite)?;
-        println!("{}: {}", name, drip_task);
+        println!("{}", drip_task);
 
         Prompt::new("proceed? [N/y/!] ").process(|s| {
             match s {

@@ -9,7 +9,7 @@ use std::{
     path::PathBuf,
 };
 
-use crate::utils::IgnoreSet;
+use crate::utils::IgnoreSetBuilder;
 use crate::{drugstore::AtomMode, utils};
 
 #[derive(Debug, Clone)]
@@ -19,7 +19,7 @@ pub struct Machine {
     pub repo: PathBuf,
     pub sync: AtomMode,
     pub undo: usize,
-    pub ignore: IgnoreSet,
+    pub ignore: IgnoreSetBuilder,
     pub submodule: bool,
     pub symlink: bool,
     pub cleanup_site: bool,
@@ -66,7 +66,7 @@ impl TryFrom<MachineConf> for Machine {
             repo: utils::expand_path(&repo)?,
             sync,
             undo,
-            ignore: IgnoreSet::new(ignore.iter()),
+            ignore: IgnoreSetBuilder::new().chain(ignore.iter()),
             submodule,
             symlink,
             cleanup_site,
