@@ -17,7 +17,7 @@ use underdose::{
     },
     repo::Dirt,
     task::{AtomTask, DripTask, Exec, Synthesis, TaskArrow},
-    utils::{self, Conf},
+    utils::{self, Conf, Prompt},
     Drugstore, Machine,
 };
 
@@ -76,7 +76,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     for (name, pill) in &store.pills {
-        let drip_task = pill.drip.synthesis(&machine, TaskArrow::SiteToRepo)?;
+        let drip_task = pill.drip.synthesis(&machine, TaskArrow::RepoToSite)?;
         match &drip_task {
             DripTask::GitModule { remote, .. } => {}
             DripTask::Addicted {
@@ -95,26 +95,22 @@ fn main() -> anyhow::Result<()> {
             }
         }
 
-        let mut response = String::new();
-        print!("proceed? [N/y/s] ");
-        io::stdout().flush();
-        {
-            let stdin = io::stdin();
-            stdin.read_line(&mut response)?;
-        }
-
-        match response.to_lowercase().trim() {
-            "y" => {
-                println!("executing...");
-                drip_task.exec()?;
-            }
-            "n" => {
-                println!("abort!");
-            }
-            _ => {
-                println!("skipping...");
-            }
-        }
+        Prompt::new("proceed? [N/y/!] ").process(|s| {
+            match s {
+                "y" => {
+                    println!("executing...");
+                    drip_task.exec()?;
+                }
+                "!" => {
+                    println!("abort!");
+                    Err(io::Error::new(io::ErrorKind::Other, "abort!"))?;
+                }
+                _ => {
+                    println!("skipping...");
+                }
+            };
+            Ok(())
+        })?;
     }
     Ok(())
 }

@@ -68,7 +68,7 @@ mod synthesis {
             let root = self
                 .root
                 .as_ref()
-                .ok_or_else(|| anyhow::anyhow!("no root set"))?;
+                .ok_or_else(|| anyhow::anyhow!("no root set for drip"))?;
             match &self.var {
                 Some(DripVariant::GitModule { remote }) => Ok(DripTask::GitModule {
                     root: root.synthesis(machine, arrow)?,
@@ -177,6 +177,10 @@ mod synthesis {
 }
 
 mod exec {
+    use std::io;
+
+    use crate::utils::Prompt;
+
     use super::*;
 
     impl Exec for DripTask {
@@ -195,11 +199,38 @@ mod exec {
 
     impl Exec for AtomTask {
         fn exec(self) -> anyhow::Result<()> {
+            log::debug!("executing atom: {}", self);
             fs::create_dir_all(
                 self.dst
                     .parent()
                     .ok_or_else(|| anyhow::anyhow!("no parent for destination"))?,
             )?;
+            if self.dst.exists() {
+                Prompt::new(&format!(
+                    "target <{}> already exists.\noverwrite? [N/y/!] ",
+                    self.dst.display()
+                ))
+                .process(|s| {
+                    match s {
+                        "y" => {
+                            if self.dst.is_file() || self.dst.is_symlink() {
+                                fs::remove_file(&self.dst)?;
+                            } else if self.dst.is_dir() {
+                                fs::remove_dir_all(&self.dst)?;
+                            }
+                        }
+                        "!" => {
+                            println!("abort!");
+                            Err(io::Error::new(io::ErrorKind::Other, "abort!"))?;
+                        }
+                        _ => {
+                            println!("skipping...");
+                        }
+                    };
+                    Ok(())
+                })?;
+                fs::remove_file(&self.dst)?;
+            }
             match self.mode {
                 AtomMode::FileCopy => {
                     fs::copy(&self.src, &self.dst)?;

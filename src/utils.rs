@@ -1,6 +1,6 @@
 use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
 use std::{
-    io::Read,
+    io::{self, Read, Write},
     path::{Path, PathBuf},
 };
 
@@ -54,16 +54,21 @@ pub fn trim_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
     let par = path
         .as_ref()
         .parent()
-        .ok_or_else(|| anyhow::anyhow!("path should have parent"))?;
-    let file_name = path
-        .as_ref()
-        .file_name()
-        .ok_or_else(|| anyhow::anyhow!("path should have file name"))?;
+        .ok_or_else(|| anyhow::anyhow!("path <{}> should have parent", path.as_ref().display()))?;
+    let file_name = path.as_ref().file_name().ok_or_else(|| {
+        anyhow::anyhow!("path <{}> should have file name", path.as_ref().display())
+    })?;
     let file_name = file_name
         .to_str()
         .ok_or_else(|| anyhow::anyhow!("file name should be valid utf-8"))?;
     let file_name = file_name.trim_end_matches('/');
-    Ok(par.join(file_name))
+    let res = par.join(file_name);
+    println!(
+        "trim_path: {} -> {}",
+        path.as_ref().display(),
+        res.display()
+    );
+    Ok(res)
 }
 
 #[derive(Debug, Clone)]
@@ -88,5 +93,30 @@ impl IgnoreSet {
     }
     pub fn is_ignored(&self, path: impl AsRef<Path>) -> bool {
         self.globs.is_match(path.as_ref())
+    }
+}
+
+pub struct Prompt<'a> {
+    line: &'a str,
+}
+
+impl<'a> Prompt<'a> {
+    pub fn new(line: &'a str) -> Self {
+        Self { line }
+    }
+
+    pub fn process(
+        self,
+        cont_lower_trim: impl FnOnce(&str) -> anyhow::Result<()>,
+    ) -> anyhow::Result<()> {
+        let mut response = String::new();
+        print!("{}", self.line);
+        io::stdout().flush();
+        {
+            let stdin = io::stdin();
+            stdin.read_line(&mut response)?;
+        }
+
+        cont_lower_trim(response.to_lowercase().trim())
     }
 }
