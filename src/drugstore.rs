@@ -118,8 +118,8 @@ impl AtomMode {
 impl Display for AtomMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AtomMode::FileCopy => write!(f, "copy"),
-            AtomMode::Link => write!(f, "link"),
+            AtomMode::FileCopy => write!(f, "cp"),
+            AtomMode::Link => write!(f, "ln"),
         }
     }
 }

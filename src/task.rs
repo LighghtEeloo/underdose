@@ -12,6 +12,7 @@ use std::{
     path::PathBuf,
 };
 
+#[derive(Clone, Copy)]
 pub enum TaskArrow {
     SiteToRepo,
     RepoToSite,
@@ -28,8 +29,14 @@ pub trait Exec {
 }
 
 pub enum DripTask {
-    GitModule { remote: Box<GitUrl>, root: AtomTask },
-    Addicted { atoms: Vec<AtomTask> },
+    GitModule {
+        root: AtomTask,
+        remote: Box<GitUrl>,
+    },
+    Addicted {
+        root: AtomTask,
+        atoms: Vec<AtomTask>,
+    },
 }
 
 pub struct AtomTask {
@@ -42,7 +49,7 @@ impl Display for AtomTask {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "<{}> {} {} {}",
+            "{} :: [{}] {} [{}]",
             self.mode,
             self.src.display(),
             self.mode.display_arrow(),
@@ -64,13 +71,14 @@ mod synthesis {
                 .ok_or_else(|| anyhow::anyhow!("no root set"))?;
             match &self.var {
                 Some(DripVariant::GitModule { remote }) => Ok(DripTask::GitModule {
+                    root: root.synthesis(machine, arrow)?,
                     remote: match remote.parse() {
                         Ok(url) => Box::new(url),
                         Err(e) => Err(anyhow::anyhow!("{:?}", e))?,
                     },
-                    root: root.synthesis(machine, arrow)?,
                 }),
                 Some(DripVariant::Addicted { stems }) => Ok(DripTask::Addicted {
+                    root: root.synthesis(machine, arrow)?,
                     atoms: AddictedDrip {
                         root,
                         stems,
@@ -173,8 +181,8 @@ mod exec {
     impl Exec for DripTask {
         fn exec(self) -> anyhow::Result<()> {
             match self {
-                DripTask::GitModule { remote, root } => todo!(),
-                DripTask::Addicted { atoms } => {
+                DripTask::GitModule { root, remote } => todo!(),
+                DripTask::Addicted { root, atoms } => {
                     for atom in atoms {
                         atom.exec()?;
                     }

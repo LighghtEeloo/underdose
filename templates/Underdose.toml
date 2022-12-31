@@ -10,16 +10,19 @@ repo = "path/to/your/local/drugstore/repo/"
 
 [defaults]
 
-# sync <: "copy" | "link"
-sync = "copy"
+# sync <: "link" | "copy"
+sync = "link"
 
 # recent versions to keep
-undo = 10
+undo = 100
 
 # global ignore
 ignore = ["**/.git/"]
 
 [features]
+
+# collect local `Underdose.toml` to the drugstore/.underdose dir
+overdose = true
 
 # git submodule support: drip level submodule detection; automatically clones
 # git repo to the drugstore if not present
@@ -30,7 +33,7 @@ symlink = false
 
 [cleanup.empty_dir]
 site = false
-repo = true
+repo = false
 
 
 # After carefully editing the rest of the file, remove this line and below to

@@ -79,10 +79,14 @@ fn main() -> anyhow::Result<()> {
         let drip_task = pill.drip.synthesis(&machine, TaskArrow::SiteToRepo)?;
         match &drip_task {
             DripTask::GitModule { remote, .. } => {}
-            DripTask::Addicted { ref atoms } => {
+            DripTask::Addicted {
+                ref root,
+                ref atoms,
+            } => {
                 log::info!(
-                    "\n[[{}]]::site_to_repo: {:#?}",
+                    "\n[[{}]] {} {:#?}",
                     name,
+                    root,
                     atoms
                         .iter()
                         .map(|task| { format!("{}", task) })
@@ -92,14 +96,14 @@ fn main() -> anyhow::Result<()> {
         }
 
         let mut response = String::new();
-        print!("proceed?");
+        print!("proceed? [y/N] ");
         io::stdout().flush();
         {
             let stdin = io::stdin();
             stdin.read_line(&mut response)?;
         }
 
-        if (response.to_lowercase().starts_with('y')) {
+        if (response.to_lowercase().trim() == "y") {
             println!("executing...");
             drip_task.exec()?;
         }

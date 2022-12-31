@@ -71,20 +71,6 @@ impl IgnoreSet {
         }
     }
     pub fn is_ignored(&self, path: impl AsRef<Path>) -> bool {
-        // let p = path.as_ref();
-        // let p = if std::path::is_separator(
-        //     p.file_name()
-        //         .unwrap()
-        //         .to_str()
-        //         .unwrap()
-        //         .chars()
-        //         .last()
-        //         .unwrap(),
-        // ) {
-        //     &p[0..p.len() - 1]
-        // } else {
-        //     p
-        // };
         self.globs.is_match(path.as_ref())
     }
 }
