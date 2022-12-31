@@ -58,5 +58,6 @@ git-url-parse = "0.4"
 # scraper = "0.14"
 
 # utils
+indexmap = { version = "1.9" , features = ["serde"] }
 # phf = { version = "0.11", features = ["macros"] }
 # const_format = "0.2"

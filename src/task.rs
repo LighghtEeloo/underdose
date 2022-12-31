@@ -65,6 +65,7 @@ mod synthesis {
         type Task = DripTask;
 
         fn synthesis(&self, name: &str, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
+            log::trace!("synthesizing drip <{}>", name);
             let root = self
                 .root
                 .as_ref()
@@ -160,6 +161,7 @@ mod synthesis {
         type Task = AtomTask;
 
         fn synthesis(&self, name: &str, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
+            log::trace!("synthesizing atom <{:?}> for drip <{}>", self, name);
             Ok(match arrow {
                 SiteToRepo => AtomTask {
                     src: self.site.to_owned(),
@@ -231,6 +233,7 @@ mod exec {
                 })?;
                 fs::remove_file(&self.dst)?;
             }
+            log::trace!("exec -- {}", self);
             match self.mode {
                 AtomMode::FileCopy => {
                     fs::copy(&self.src, &self.dst)?;

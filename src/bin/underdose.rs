@@ -2,57 +2,47 @@
 #![allow(clippy::useless_format)]
 
 use directories_next::ProjectDirs;
-use git2::{Delta, DiffFile, Repository, Statuses};
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Display,
-    io::{self, Write},
-    path::{Path, PathBuf},
-};
+use git2::Repository;
+use std::io;
 use underdose::{
-    drugstore::{
-        Atom,
-        AtomMode::{self, *},
-        Drip, DripVariant, Pill,
-    },
     repo::Dirt,
-    task::{AtomTask, DripTask, Exec, Synthesis, TaskArrow},
-    utils::{self, Conf, Prompt},
+    task::{DripTask, Exec, Synthesis, TaskArrow},
+    utils::{Conf, Prompt},
     Drugstore, Machine,
 };
 
 fn main() -> anyhow::Result<()> {
     env_logger::init();
-
-    let home_path = utils::expand_path(std::env::var("HOME").unwrap());
-
-    let underdose_conf_name = "Underdose.toml";
     let underdose_dirs = ProjectDirs::from("", "LitiaEeloo", "Underdose")
         .expect("No valid config directory fomulated");
 
+    // read underdose_conf into machine
+    let underdose_conf_name = "Underdose.toml";
     let underdose_conf = Conf {
-        name: underdose_conf_name.to_string(),
         template: include_str!("../../templates/Underdose.toml"),
         path: underdose_dirs.config_dir().join(underdose_conf_name),
     };
     log::info!(
-        "\nreading underdose_conf: \n\tname: {}\n\tpath: {}",
-        underdose_conf.name,
+        "\nreading underdose_conf: {}",
         underdose_conf.path.display()
     );
     let machine_buf = underdose_conf.ensure()?.read()?;
     let machine: Machine = machine_buf.as_str().try_into()?;
     log::debug!("\n{:#?}", machine);
 
+    // write local conf to drugstore/.underdose/<name>.toml
+    Conf {
+        template: &machine_buf,
+        path: machine.repo.join(".underdose").join(&machine.name),
+    };
+
     let drugstore_conf_name = "Drugstore.toml";
     let drugstore_conf = Conf {
-        name: drugstore_conf_name.to_string(),
         template: include_str!("../../templates/Drugstore.toml"),
         path: machine.repo.join(drugstore_conf_name),
     };
     log::info!(
-        "\nreading drugstore_conf: \n\tname: {}\n\tpath: {}",
-        drugstore_conf.name,
+        "\nreading drugstore_conf: {}",
         drugstore_conf.path.display()
     );
     let store_buf = drugstore_conf.ensure()?.read()?;

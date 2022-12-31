@@ -9,11 +9,12 @@ use std::{
     collections::{HashMap, HashSet},
     path::PathBuf,
 };
+use indexmap::IndexMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Drugstore {
     pub env: EnvMap,
-    pub pills: HashMap<String, Pill>,
+    pub pills: IndexMap<String, Pill>,
 }
 
 /// a map of name -> upward dependencies, up to the root
@@ -53,6 +54,12 @@ impl EnvSet {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Pill {
     pub drip: Drip,
+}
+
+impl Pill {
+    pub fn non_empty(&self) -> bool {
+        !self.drip.root.is_none() && !self.drip.var.is_none()
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -161,7 +168,7 @@ impl TryFrom<(&toml::Value, &Machine)> for Drugstore {
 
         let pills = if let Some(pills) = toml.get("pill") {
             if let Some(pills_raw) = pills.as_array() {
-                let mut pills = HashMap::new();
+                let mut pills = IndexMap::new();
                 for pill in pills_raw {
                     let name = pill["name"]
                         .as_str()
@@ -203,18 +210,12 @@ impl TryFrom<(&toml::Value, &Machine)> for Drugstore {
                 Err(anyhow::anyhow!("pills are not in an array"))?
             }
         } else {
-            HashMap::new()
+            IndexMap::new()
         };
 
         crate::utils::passed_tutorial(&toml)?;
 
         Ok(Self { env, pills })
-    }
-}
-
-impl Pill {
-    pub fn non_empty(&self) -> bool {
-        !self.drip.root.is_none() && !self.drip.var.is_none()
     }
 }
 

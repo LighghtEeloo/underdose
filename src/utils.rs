@@ -5,13 +5,12 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct Conf {
-    pub name: String,
-    pub template: &'static str,
+pub struct Conf<'a> {
+    pub template: &'a str,
     pub path: PathBuf,
 }
 
-impl Conf {
+impl Conf<'_> {
     pub fn ensure(mut self) -> anyhow::Result<Self> {
         self.path = canonicalize_path(&self.path)?;
         if !self.path.exists() {

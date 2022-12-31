@@ -14,6 +14,7 @@ use crate::{drugstore::AtomMode, utils};
 
 #[derive(Debug, Clone)]
 pub struct Machine {
+    pub name: String,
     pub env: HashSet<String>,
     pub repo: PathBuf,
     pub sync: AtomMode,
@@ -39,14 +40,11 @@ impl TryFrom<MachineConf> for Machine {
 
     fn try_from(
         MachineConf {
+            name,
             env,
             repo,
             defaults: DefaultsConf { sync, undo, ignore },
-            features:
-                FeaturesConf {
-                    submodule,
-                    symlink,
-                },
+            features: FeaturesConf { submodule, symlink },
             cleanup:
                 CleanupConf {
                     empty_dir:
@@ -63,6 +61,7 @@ impl TryFrom<MachineConf> for Machine {
         }
 
         Ok(Self {
+            name,
             env,
             repo: utils::expand_path(&repo)?,
             sync,
@@ -78,6 +77,7 @@ impl TryFrom<MachineConf> for Machine {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MachineConf {
+    pub name: String,
     pub env: HashSet<String>,
     pub repo: PathBuf,
     pub defaults: DefaultsConf,
