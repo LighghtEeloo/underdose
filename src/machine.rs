@@ -30,31 +30,31 @@ impl TryFrom<&str> for Machine {
     type Error = anyhow::Error;
 
     fn try_from(buf: &str) -> anyhow::Result<Self> {
-        let conf: MachineConf = toml::from_str(buf)?;
+        let conf: parse::Machine = toml::from_str(buf)?;
         conf.try_into()
     }
 }
 
-impl TryFrom<MachineConf> for Machine {
+impl TryFrom<parse::Machine> for Machine {
     type Error = anyhow::Error;
 
     fn try_from(
-        MachineConf {
+        parse::Machine {
             name,
             env,
             repo,
-            defaults: DefaultsConf { sync, undo, ignore },
-            features: FeaturesConf { submodule, symlink },
+            defaults: parse::Defaults { sync, undo, ignore },
+            features: parse::Features { submodule, symlink },
             cleanup:
-                CleanupConf {
+                parse::Cleanup {
                     empty_dir:
-                        CleanupEmptyDirConf {
+                        parse::CleanupEmptyDir {
                             site: cleanup_site,
                             repo: cleanup_repo,
                         },
                 },
             tutorial,
-        }: MachineConf,
+        }: parse::Machine,
     ) -> Result<Self, Self::Error> {
         if let Some(_) = tutorial {
             Err(anyhow::anyhow!("tutorial has not been completed yet"))?;
@@ -75,37 +75,41 @@ impl TryFrom<MachineConf> for Machine {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct MachineConf {
-    pub name: String,
-    pub env: HashSet<String>,
-    pub repo: PathBuf,
-    pub defaults: DefaultsConf,
-    pub features: FeaturesConf,
-    pub cleanup: CleanupConf,
-    pub tutorial: Option<()>,
-}
+mod parse {
+    use super::*;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct DefaultsConf {
-    pub sync: AtomMode,
-    pub undo: usize,
-    pub ignore: Vec<String>,
-}
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct Machine {
+        pub name: String,
+        pub env: HashSet<String>,
+        pub repo: PathBuf,
+        pub defaults: Defaults,
+        pub features: Features,
+        pub cleanup: Cleanup,
+        pub tutorial: Option<()>,
+    }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct FeaturesConf {
-    pub submodule: bool,
-    pub symlink: bool,
-}
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct Defaults {
+        pub sync: AtomMode,
+        pub undo: usize,
+        pub ignore: Vec<String>,
+    }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CleanupConf {
-    pub empty_dir: CleanupEmptyDirConf,
-}
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct Features {
+        pub submodule: bool,
+        pub symlink: bool,
+    }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct CleanupEmptyDirConf {
-    pub site: bool,
-    pub repo: bool,
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct Cleanup {
+        pub empty_dir: CleanupEmptyDir,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct CleanupEmptyDir {
+        pub site: bool,
+        pub repo: bool,
+    }
 }
