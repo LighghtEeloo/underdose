@@ -5,7 +5,7 @@ name = "archan"
 # see `DrugStore.toml` for a full example of `env`
 env = ["arch"]
 # path to the local drugstore repo
-repo = "path/to/your/local/drugstore/repo/"
+repo = "path/to/your/local/drugstore/repo"
 
 
 [defaults]
@@ -17,7 +17,7 @@ sync = "link"
 undo = 100
 
 # global ignore
-ignore = ["**/.git/"]
+ignore = ["**/.git"]
 
 [features]
 

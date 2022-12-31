@@ -22,14 +22,14 @@
 [[pill]]
 name = "nvim"
 [[pill.drip]]
-root = "~/.config/nvim/"
-stem = ["./"]
+root = "~/.config/nvim"
+stem = [""]
 
 # A pill about the awesome configuration, stored in a git submodule.
 [[pill]]
 name = "awesome"
 [[pill.drip]]
-root = "~/.config/awesome/"
+root = "~/.config/awesome"
 remote = "git@github.com:path/to/awesome_conf.git"
 
 # A pill with same configuration but with different distribution path. The root
@@ -38,12 +38,12 @@ remote = "git@github.com:path/to/awesome_conf.git"
 [[pill]]
 name = "emacs"
 [[pill.drip]]
-root = "~/.config/emacs/"
+root = "~/.config/emacs"
 stem = ["init.el"]
 # This outputs { root = "~/.config/emacs/", stem = ["init.el"] } for everyone...
 [[pill.drip]]
 env = ["mac"]
-root = "~/.emacs.d/"
+root = "~/.emacs.d"
 # ...except mac, which gets { root = "~/.emacs.d/", stem = ["init.el"] }.
 
 # A pill with two different configurations on the same software, but share same
@@ -51,7 +51,7 @@ root = "~/.emacs.d/"
 [[pill]]
 name = "zsh"
 [[pill.drip]]
-root = "~/"
+root = "~"
 stem = [".zshrc", ".zshenv"]
 [[pill.drip]]
 env = ["mac"]
