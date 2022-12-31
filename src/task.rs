@@ -1,17 +1,13 @@
-use crate::drugstore::{Atom, AtomMode, Drip, DripVariant, Pill};
+use crate::drugstore::{Atom, AtomMode, DripInner, Pill};
 use crate::utils;
 use crate::Machine;
 use colored::Colorize;
 use git_url_parse::GitUrl;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use std::fs::{self, File};
-use std::io::Read;
+use std::fs;
 use std::path::Path;
-use std::{
-    collections::{HashMap, HashSet},
-    path::PathBuf,
-};
+use std::path::PathBuf;
 
 #[derive(Clone, Copy)]
 pub enum TaskArrow {
@@ -42,13 +38,13 @@ pub enum PillTaskInner {
 
 impl Display for PillTask {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "\n[[{}]]", self.name)?;
+        writeln!(f, "|| {}", self.root)?;
         match &self.inner {
             PillTaskInner::GitModule { remote } => {
-                write!(f, "")?;
+                writeln!(f, "      || remote-task @ {}", remote)?;
             }
             PillTaskInner::Addicted { atoms } => {
-                writeln!(f, "\n[[{}]]", self.name)?;
-                writeln!(f, "|| {}", self.root)?;
                 for atom in atoms {
                     writeln!(f, "      || {}", atom)?;
                 }
@@ -103,7 +99,7 @@ mod synthesis {
                 .as_ref()
                 .ok_or_else(|| anyhow::anyhow!("no root set for drip <{}>", name))?;
             match &drip.var {
-                Some(DripVariant::GitModule { remote }) => Ok(PillTask {
+                Some(DripInner::GitModule { remote }) => Ok(PillTask {
                     name: name.to_owned(),
                     root: root.synthesis(machine, arrow)?,
                     inner: PillTaskInner::GitModule {
@@ -113,7 +109,7 @@ mod synthesis {
                         },
                     },
                 }),
-                Some(DripVariant::Addicted { stems }) => Ok(PillTask {
+                Some(DripInner::Addicted { stems }) => Ok(PillTask {
                     name: name.to_owned(),
                     root: root.synthesis(machine, arrow)?,
                     inner: PillTaskInner::Addicted {
@@ -169,11 +165,7 @@ mod synthesis {
         }
         /// Resolve stem atoms to absolute file paths; requires a direction
         fn resolve_atoms(self, arrow: TaskArrow) -> anyhow::Result<Vec<AtomTask>> {
-            let AddictedDrip {
-                root,
-                stems,
-                machine,
-            } = self;
+            let AddictedDrip { root, stems, .. } = self;
             let mut tasks = Vec::new();
             for atom in stems {
                 if matches!(atom.mode, AtomMode::Link) {

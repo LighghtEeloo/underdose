@@ -11,7 +11,7 @@ pub struct Conf<'a> {
 }
 
 impl Conf<'_> {
-    pub fn ensure_exist(mut self) -> anyhow::Result<Self> {
+    pub fn ensure_exist(self) -> anyhow::Result<Self> {
         // self.path = canonicalize_parent(&self.path)?;
         if !self.path.exists() {
             std::fs::create_dir_all(self.path.parent().expect("config path should have parent"))?;
@@ -19,7 +19,7 @@ impl Conf<'_> {
         }
         Ok(self)
     }
-    pub fn ensure_force(mut self) -> anyhow::Result<Self> {
+    pub fn ensure_force(self) -> anyhow::Result<Self> {
         // self.path = canonicalize_parent(&self.path)?;
         if !self.path.exists() {
             std::fs::create_dir_all(self.path.parent().expect("config path should have parent"))?;
@@ -60,7 +60,7 @@ pub fn expand_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
 }
 
 pub fn canonicalize_parent<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
-    let mut path = expand_path(path)?;
+    let path = expand_path(path)?;
     let parent = path
         .parent()
         .ok_or_else(|| anyhow::anyhow!("path <{}> should have parent", path.display()))?;
@@ -127,7 +127,7 @@ impl<'a> Prompt<'a> {
     ) -> anyhow::Result<()> {
         let mut response = String::new();
         print!("{}", self.line);
-        io::stdout().flush();
+        io::stdout().flush()?;
         {
             let stdin = io::stdin();
             stdin.read_line(&mut response)?;
