@@ -1,7 +1,10 @@
-# Underdose
+# Underdose (WIP)
 
 Dotfile overdosers' ideal companion. It's recommended to alias the binary `underdose` to `ud`. Distribution through cargo, AUR and homebrew are planned.
 
+## WIP Warning
+
+This artifact is still under construction. The declared features have not been fully implemented yet.
 
 ## Motivation and Philosophy
 
