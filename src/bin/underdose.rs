@@ -51,8 +51,7 @@ fn main() -> anyhow::Result<()> {
         drugstore_conf.path.display()
     );
     let store_buf = drugstore_conf.ensure_exist()?.read()?;
-    let store: Drugstore =
-        (store_buf.as_ref(), &machine).try_into()?;
+    let store: Drugstore = (store_buf.as_ref(), &machine).try_into()?;
     log::debug!("\n{:#?}", store);
 
     // open drugstore repo

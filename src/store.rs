@@ -7,14 +7,14 @@ use std::{
     path::PathBuf,
 };
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Debug)]
 pub struct Drugstore {
-    pub env: EnvMap,
+    pub env: EnvSet,
     pub pills: IndexMap<String, Pill>,
 }
 
 /// a map of name -> upward dependencies, up to the root
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Debug)]
 pub struct EnvMap {
     pub map: HashMap<String, HashSet<String>>,
 }
@@ -36,7 +36,7 @@ impl EnvMap {
 }
 
 /// a set of machine possesed envs
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Debug)]
 pub struct EnvSet {
     pub set: HashSet<String>,
 }
@@ -50,7 +50,7 @@ impl EnvSet {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Debug)]
 pub struct Pill {
     pub name: String,
     pub drip: Drip,
@@ -62,15 +62,14 @@ impl Pill {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 pub struct Drip {
     pub root: Option<Atom>,
     /// variants
-    #[serde(flatten)]
     pub inner: Option<DripInner>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 pub enum DripInner {
     GitModule {
         /// url to remote git repo
@@ -140,14 +139,14 @@ impl<'a> DripApplyIncr<'a> {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 pub struct Atom {
     pub site: PathBuf,
     pub repo: PathBuf,
     pub mode: AtomMode,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 pub struct QuasiAtom {
     pub site: Option<PathBuf>,
     pub repo: Option<PathBuf>,
@@ -189,7 +188,6 @@ mod parse {
     }
 
     #[derive(Serialize, Deserialize, Debug)]
-    #[serde(deny_unknown_fields)]
     pub struct Drip {
         /// `tags` is resolved to trivial form during parsing
         #[serde(alias = "env", default)]
@@ -197,7 +195,7 @@ mod parse {
         pub root: Option<Atom>,
         /// variants
         #[serde(flatten)]
-        pub inner: Option<DripInner>,
+        pub inner: DripInner,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -210,15 +208,16 @@ mod parse {
         },
         Addicted {
             /// Atoms are incremented from drips but dirs aren't expanded
-            stem: Vec<Atom>,
+            stem: Option<Vec<Atom>>,
             /// ignore
-            ignore: Vec<String>,
+            ignore: Option<Vec<String>>,
         },
+        Empty,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
-    #[serde(deny_unknown_fields)]
     #[serde(untagged)]
+    #[serde(deny_unknown_fields)]
     pub enum Atom {
         Plain(String),
         Rich {
@@ -244,7 +243,7 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
     fn try_from(
         (conf, machine): (parse::Drugstore, &Machine),
     ) -> anyhow::Result<Self> {
-        let mut envmap = HashMap::new();
+        let mut map = HashMap::new();
         fn register_env<'e>(
             env: &mut HashMap<String, HashSet<String>>,
             worklist: &mut Vec<&'e str>, toml: &'e toml::Value,
@@ -268,8 +267,8 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
                 }
             }
         }
-        register_env(&mut envmap, &mut Vec::new(), &conf.env);
-        let envset = EnvMap { map: envmap }.resolve(machine)?;
+        register_env(&mut map, &mut Vec::new(), &conf.env);
+        let env = EnvMap { map }.resolve(machine)?;
 
         let mut pills = IndexMap::new();
         for pill in conf.pill {
@@ -287,7 +286,7 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
 
             let pill = Pill {
                 name: pill.name.to_owned(),
-                drip: DripApplyIncr::new(&envset).apply_incr(drips)?,
+                drip: DripApplyIncr::new(&env).apply_incr(drips)?,
             };
 
             if pill.non_empty() {
@@ -297,7 +296,7 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
             }
         }
 
-        todo!()
+        Ok(Drugstore { env, pills })
     }
 }
 
@@ -313,11 +312,14 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
             let quasi: QuasiAtom = root.try_into()?;
             Some(Atom {
                 site: utils::expand_path(
-                    quasi.site
+                    quasi
+                        .site
                         .ok_or_else(|| anyhow::anyhow!("no site found"))?,
                 )?,
                 repo: utils::ensured_dir(
-                    machine.repo.join(quasi.repo.unwrap_or_else(|| name.into())),
+                    machine
+                        .repo
+                        .join(quasi.repo.unwrap_or_else(|| name.into())),
                 )?,
                 mode: quasi.mode.unwrap_or_else(|| machine.sync),
             })
@@ -325,14 +327,13 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
             None
         };
 
+        use parse::DripInner::*;
         let inner =
             match conf.inner {
-                Some(parse::DripInner::GitModule { remote }) => {
-                    Some(DripInner::GitModule { remote })
-                }
-                Some(parse::DripInner::Addicted { stem, ignore }) => {
+                GitModule { remote } => Some(DripInner::GitModule { remote }),
+                Addicted { stem, ignore } => {
                     let mut new_stem = Vec::new();
-                    for conf in stem {
+                    for conf in stem.unwrap_or_default() {
                         let quasi: QuasiAtom = conf.try_into()?;
                         let site = quasi
                             .site
@@ -347,10 +348,10 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
                     }
                     Some(DripInner::Addicted {
                         stem: new_stem,
-                        ignore,
+                        ignore: ignore.unwrap_or_default(),
                     })
                 }
-                None => None,
+                Empty => None,
             };
 
         Ok(Self { root, inner })
