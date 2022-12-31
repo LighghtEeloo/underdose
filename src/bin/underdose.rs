@@ -76,7 +76,7 @@ fn main() -> anyhow::Result<()> {
     }
 
     for (name, pill) in &store.pills {
-        let drip_task = pill.drip.synthesis(&machine, TaskArrow::RepoToSite)?;
+        let drip_task = pill.drip.synthesis(name, &machine, TaskArrow::RepoToSite)?;
         match &drip_task {
             DripTask::GitModule { remote, .. } => {}
             DripTask::Addicted {

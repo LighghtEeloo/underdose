@@ -21,7 +21,7 @@ pub use TaskArrow::*;
 
 pub trait Synthesis {
     type Task;
-    fn synthesis(&self, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task>;
+    fn synthesis(&self, name: &str, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task>;
 }
 
 pub trait Exec {
@@ -64,21 +64,21 @@ mod synthesis {
     impl Synthesis for Drip {
         type Task = DripTask;
 
-        fn synthesis(&self, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
+        fn synthesis(&self, name: &str, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
             let root = self
                 .root
                 .as_ref()
-                .ok_or_else(|| anyhow::anyhow!("no root set for drip"))?;
+                .ok_or_else(|| anyhow::anyhow!("no root set for drip <{}>", name))?;
             match &self.var {
                 Some(DripVariant::GitModule { remote }) => Ok(DripTask::GitModule {
-                    root: root.synthesis(machine, arrow)?,
+                    root: root.synthesis(name, machine, arrow)?,
                     remote: match remote.parse() {
                         Ok(url) => Box::new(url),
                         Err(e) => Err(anyhow::anyhow!("{:?}", e))?,
                     },
                 }),
                 Some(DripVariant::Addicted { stems }) => Ok(DripTask::Addicted {
-                    root: root.synthesis(machine, arrow)?,
+                    root: root.synthesis(name, machine, arrow)?,
                     atoms: AddictedDrip {
                         root,
                         stems,
@@ -159,7 +159,7 @@ mod synthesis {
     impl Synthesis for Atom {
         type Task = AtomTask;
 
-        fn synthesis(&self, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
+        fn synthesis(&self, name: &str, machine: &Machine, arrow: TaskArrow) -> anyhow::Result<Self::Task> {
             Ok(match arrow {
                 SiteToRepo => AtomTask {
                     src: self.site.to_owned(),

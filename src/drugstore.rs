@@ -188,12 +188,15 @@ impl TryFrom<(&toml::Value, &Machine)> for Drugstore {
                         ))
                     }
 
-                    pills.insert(
-                        name,
-                        Pill {
-                            drip: DripApplyIncr::new(&envset).apply_incr(drips)?,
-                        },
-                    );
+                    let pill = Pill {
+                        drip: DripApplyIncr::new(&envset).apply_incr(drips)?,
+                    };
+
+                    if pill.non_empty() {
+                        pills.insert(name, pill);
+                    } else {
+                        log::info!("ignored empty pill <{}>", name)
+                    }
                 }
                 pills
             } else {
@@ -206,6 +209,12 @@ impl TryFrom<(&toml::Value, &Machine)> for Drugstore {
         crate::utils::passed_tutorial(&toml)?;
 
         Ok(Self { env, pills })
+    }
+}
+
+impl Pill {
+    pub fn non_empty(&self) -> bool {
+        !self.drip.root.is_none() && !self.drip.var.is_none()
     }
 }
 
@@ -275,7 +284,9 @@ impl TryFrom<(&toml::Value, &String, &Machine)> for DripConf {
                 site: utils::expand_path(
                     quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?,
                 )?,
-                repo: utils::expand_path(quasi.repo.unwrap_or_else(|| machine.repo.join(name)))?,
+                repo: utils::ensured_dir(
+                    machine.repo.join(quasi.repo.unwrap_or_else(|| name.into())),
+                )?,
                 mode: quasi.mode.unwrap_or_else(|| machine.sync),
             })
         } else {
@@ -350,10 +361,18 @@ impl TryFrom<&toml::Value> for AtomConf {
                     })
                     .flatten()
             }
+            let mode = match value.get("mode") {
+                Some(mode) => match mode.as_str() {
+                    Some("copy") => Some(AtomMode::FileCopy),
+                    Some("link") => Some(AtomMode::Link),
+                    _ => None,
+                },
+                None => None,
+            };
             Ok(AtomConf {
                 site: as_path("site", value),
                 repo: as_path("repo", value),
-                mode: None,
+                mode,
             })
         } else {
             Err(anyhow::anyhow!("root is neither a path nor an atom"))?

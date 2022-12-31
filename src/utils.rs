@@ -40,6 +40,14 @@ pub fn passed_tutorial(toml: &toml::Value) -> anyhow::Result<()> {
     Ok(())
 }
 
+pub fn ensured_dir<P: AsRef<Path>>(dir_path: P) -> anyhow::Result<PathBuf> {
+    let path = canonicalize_path(dir_path)?;
+    if !path.exists() {
+        std::fs::create_dir_all(&path)?;
+    }
+    Ok(path)
+}
+
 pub fn expand_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
     Ok(PathBuf::from(shellexpand::path::tilde(path.as_ref())))
 }
@@ -63,11 +71,6 @@ pub fn trim_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
         .ok_or_else(|| anyhow::anyhow!("file name should be valid utf-8"))?;
     let file_name = file_name.trim_end_matches('/');
     let res = par.join(file_name);
-    println!(
-        "trim_path: {} -> {}",
-        path.as_ref().display(),
-        res.display()
-    );
     Ok(res)
 }
 
