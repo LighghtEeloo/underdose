@@ -99,6 +99,10 @@ The following sections demonstrate the technical details of `underdose`.
 
 `ud sync` is composed of running `ud sync <pill>` for all pill and a final check of whether the tree is clean for remote sync. Upon each `ud sync <pill>`, a temporary folder will be generated and all machine drips will be poured in. Then its sha512sum will be recorded. Only the lastest sha512sum will be recorded; a "synced" visit would mean the sha512sum hasn't changed, which makes it safe to pour the updated pill from local or remote.
 
+### Core component explained - `PillTask` and `AtomTask`
+
+...
+
 ### Roadmap
 
 - [ ] Automatic sync. Allow scheduled run for trivial tasks, but abort when anything complicated emerges. Useful for auto git fetch and pour when your remote drugstore updates.

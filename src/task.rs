@@ -235,7 +235,6 @@ mod exec {
 
     impl Exec for AtomTask {
         fn exec(self) -> anyhow::Result<()> {
-            log::debug!("executing atom: {}", self);
             fs::create_dir_all(
                 self.dst
                     .parent()
@@ -265,7 +264,10 @@ mod exec {
                     };
                     Ok(())
                 })?;
-                fs::remove_file(&self.dst)?;
+            }
+            if self.dst.exists() {
+                // meant to skip
+                return Ok(());
             }
             log::trace!("exec -- {}", self);
             match self.mode {
