@@ -11,12 +11,20 @@ pub struct Conf<'a> {
 }
 
 impl Conf<'_> {
-    pub fn ensure(mut self) -> anyhow::Result<Self> {
-        self.path = canonicalize_path(&self.path)?;
+    pub fn ensure_exist(mut self) -> anyhow::Result<Self> {
+        // self.path = canonicalize_parent(&self.path)?;
         if !self.path.exists() {
             std::fs::create_dir_all(self.path.parent().expect("config path should have parent"))?;
             std::fs::write(&self.path, self.template)?;
         }
+        Ok(self)
+    }
+    pub fn ensure_force(mut self) -> anyhow::Result<Self> {
+        // self.path = canonicalize_parent(&self.path)?;
+        if !self.path.exists() {
+            std::fs::create_dir_all(self.path.parent().expect("config path should have parent"))?;
+        }
+        std::fs::write(&self.path, self.template)?;
         Ok(self)
     }
     pub fn read(self) -> anyhow::Result<String> {
@@ -40,7 +48,7 @@ pub fn passed_tutorial(toml: &toml::Value) -> anyhow::Result<()> {
 }
 
 pub fn ensured_dir<P: AsRef<Path>>(dir_path: P) -> anyhow::Result<PathBuf> {
-    let path = canonicalize_path(dir_path)?;
+    let path = canonicalize_parent(dir_path)?;
     if !path.exists() {
         std::fs::create_dir_all(&path)?;
     }
@@ -51,10 +59,16 @@ pub fn expand_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
     Ok(PathBuf::from(shellexpand::path::tilde(path.as_ref())))
 }
 
-pub fn canonicalize_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
+pub fn canonicalize_parent<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
     let mut path = expand_path(path)?;
-    path = path.canonicalize()?;
-    Ok(path)
+    let parent = path
+        .parent()
+        .ok_or_else(|| anyhow::anyhow!("path <{}> should have parent", path.display()))?;
+    let file_name = path
+        .file_name()
+        .ok_or_else(|| anyhow::anyhow!("path <{}> should have file name", path.display()))?;
+    let parent = parent.canonicalize()?;
+    Ok(parent.join(file_name))
 }
 
 pub fn trim_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {

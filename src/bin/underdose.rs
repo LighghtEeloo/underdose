@@ -26,15 +26,15 @@ fn main() -> anyhow::Result<()> {
         "\nreading underdose_conf: {}",
         underdose_conf.path.display()
     );
-    let machine_buf = underdose_conf.ensure()?.read()?;
+    let machine_buf = underdose_conf.ensure_exist()?.read()?;
     let machine: Machine = machine_buf.as_str().try_into()?;
     log::debug!("\n{:#?}", machine);
 
     // write local conf to drugstore/.underdose/<name>.toml
     Conf {
         template: &machine_buf,
-        path: machine.repo.join(".underdose").join(&machine.name),
-    };
+        path: machine.repo.join(".underdose").join(&format!("{}.toml", machine.name)),
+    }.ensure_force()?;
 
     let drugstore_conf_name = "Drugstore.toml";
     let drugstore_conf = Conf {
@@ -45,7 +45,7 @@ fn main() -> anyhow::Result<()> {
         "\nreading drugstore_conf: {}",
         drugstore_conf.path.display()
     );
-    let store_buf = drugstore_conf.ensure()?.read()?;
+    let store_buf = drugstore_conf.ensure_exist()?.read()?;
     let store: Drugstore = (&toml::from_str(&store_buf)?, &machine).try_into()?;
     log::debug!("\n{:#?}", store);
 
