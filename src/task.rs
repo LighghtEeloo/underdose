@@ -106,6 +106,7 @@ mod synthesis {
             dst: &Path,
         ) -> anyhow::Result<()> {
             let src = utils::canonicalize_path(src)?;
+            let dst = utils::trim_path(dst)?;
             if self.machine.ignore.is_ignored(&src) {
                 log::debug!("ignoring {}", src.display())
             } else if src.is_file() {
@@ -139,8 +140,8 @@ mod synthesis {
                 if matches!(atom.mode, AtomMode::Link) {
                     // Note: symlinks always have repo -> site orientation
                     tasks.push(AtomTask {
-                        src: root.repo.join(&atom.repo),
-                        dst: root.site.join(&atom.site),
+                        src: utils::canonicalize_path(root.repo.join(&atom.repo))?,
+                        dst: utils::trim_path(root.site.join(&atom.site))?,
                         mode: AtomMode::Link,
                     })
                 } else {

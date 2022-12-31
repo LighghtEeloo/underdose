@@ -96,16 +96,24 @@ fn main() -> anyhow::Result<()> {
         }
 
         let mut response = String::new();
-        print!("proceed? [y/N] ");
+        print!("proceed? [N/y/s] ");
         io::stdout().flush();
         {
             let stdin = io::stdin();
             stdin.read_line(&mut response)?;
         }
 
-        if (response.to_lowercase().trim() == "y") {
-            println!("executing...");
-            drip_task.exec()?;
+        match response.to_lowercase().trim() {
+            "y" => {
+                println!("executing...");
+                drip_task.exec()?;
+            }
+            "n" => {
+                println!("abort!");
+            }
+            _ => {
+                println!("skipping...");
+            }
         }
     }
     Ok(())

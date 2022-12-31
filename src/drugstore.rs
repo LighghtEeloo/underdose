@@ -191,7 +191,7 @@ impl TryFrom<(&toml::Value, &Machine)> for Drugstore {
                     pills.insert(
                         name,
                         Pill {
-                            drip: DripApplyIncr::new(&envset).apply_incr(drips),
+                            drip: DripApplyIncr::new(&envset).apply_incr(drips)?,
                         },
                     );
                 }
@@ -224,9 +224,13 @@ impl<'a> DripApplyIncr<'a> {
             envset,
         }
     }
-    fn apply_force(&mut self, drip: Drip) {
+    fn apply_force(&mut self, drip: Drip) -> anyhow::Result<()> {
         use DripVariant::*;
-        self.drip.root = drip.root.or(self.drip.root.clone());
+        self.drip.root = match (drip.root, self.drip.root.clone()) {
+            (Some(_), Some(_)) => Err(anyhow::anyhow!("root set multiple times"))?,
+            (new @ Some(_), _) => new,
+            (None, old) => old,
+        };
         self.drip.var = match (drip.var, self.drip.var.clone()) {
             (Some(Addicted { stems: new }), Some(Addicted { stems: mut stem })) => {
                 stem.extend(new);
@@ -235,14 +239,15 @@ impl<'a> DripApplyIncr<'a> {
             (new @ Some(_), _) => new,
             (None, old) => old,
         };
+        Ok(())
     }
-    fn apply_incr(mut self, drips: Vec<(HashSet<String>, Drip)>) -> Drip {
+    fn apply_incr(mut self, drips: Vec<(HashSet<String>, Drip)>) -> anyhow::Result<Drip> {
         for (tags, drip) in drips {
             if self.envset.check_all(&tags) {
                 self.apply_force(drip);
             }
         }
-        self.drip
+        Ok(self.drip)
     }
 }
 

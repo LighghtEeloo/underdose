@@ -50,6 +50,22 @@ pub fn canonicalize_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
     Ok(path)
 }
 
+pub fn trim_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
+    let par = path
+        .as_ref()
+        .parent()
+        .ok_or_else(|| anyhow::anyhow!("path should have parent"))?;
+    let file_name = path
+        .as_ref()
+        .file_name()
+        .ok_or_else(|| anyhow::anyhow!("path should have file name"))?;
+    let file_name = file_name
+        .to_str()
+        .ok_or_else(|| anyhow::anyhow!("file name should be valid utf-8"))?;
+    let file_name = file_name.trim_end_matches('/');
+    Ok(par.join(file_name))
+}
+
 #[derive(Debug, Clone)]
 pub struct IgnoreSet {
     globs: GlobSet,
