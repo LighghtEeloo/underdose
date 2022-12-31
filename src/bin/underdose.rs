@@ -5,8 +5,8 @@ use directories_next::ProjectDirs;
 use git2::Repository;
 use std::io;
 use underdose::{
-    repo::Dirt,
     dynamics::{Execution, PillTask, Synthesis, TaskArrow},
+    repo::Dirt,
     utils::{Conf, Prompt},
     Drugstore, Machine,
 };
@@ -52,7 +52,7 @@ fn main() -> anyhow::Result<()> {
     );
     let store_buf = drugstore_conf.ensure_exist()?.read()?;
     let store: Drugstore =
-        (&toml::from_str(&store_buf)?, &machine).try_into()?;
+        (store_buf.as_ref(), &machine).try_into()?;
     log::debug!("\n{:#?}", store);
 
     // open drugstore repo

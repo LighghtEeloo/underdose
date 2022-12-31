@@ -71,16 +71,6 @@ pub struct Drip {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct DripConf {
-    /// `tags` is resolved to trivial form during parsing
-    pub tags: HashSet<String>,
-    pub root: Option<Atom>,
-    /// variants
-    #[serde(flatten)]
-    pub inner: Option<DripInner>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum DripInner {
     GitModule {
         /// url to remote git repo
@@ -158,7 +148,7 @@ pub struct Atom {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct AtomConf {
+pub struct QuasiAtom {
     pub site: Option<PathBuf>,
     pub repo: Option<PathBuf>,
     pub mode: Option<AtomMode>,
@@ -184,279 +174,202 @@ impl Display for AtomMode {
 mod parse {
     use super::*;
 
-    impl TryFrom<(&toml::Value, &Machine)> for Drugstore {
-        type Error = anyhow::Error;
-
-        fn try_from(
-            (toml, machine): (&toml::Value, &Machine),
-        ) -> anyhow::Result<Self> {
-            let mut envmap = HashMap::new();
-            fn register_env<'e>(
-                env: &mut HashMap<String, HashSet<String>>,
-                worklist: &mut Vec<&'e str>, toml: &'e toml::Value,
-            ) {
-                fn register<'e>(
-                    env: &mut HashMap<String, HashSet<String>>,
-                    worklist: &Vec<&'e str>, s: &'e str,
-                ) {
-                    env.entry(s.to_owned()).or_default().extend(
-                        worklist.clone().into_iter().map(ToOwned::to_owned),
-                    )
-                }
-                if let Some(s) = toml.as_str() {
-                    register(env, worklist, s);
-                } else if let Some(m) = toml.as_table() {
-                    for (k, v) in m {
-                        register(env, worklist, k);
-                        worklist.push(k);
-                        register_env(env, worklist, v);
-                        worklist.pop();
-                    }
-                }
-            }
-            register_env(&mut envmap, &mut Vec::new(), &toml["env"]);
-            let env = EnvMap { map: envmap };
-
-            let envset = env.resolve(machine)?;
-
-            let pills = if let Some(pills) = toml.get("pill") {
-                if let Some(pills_raw) = pills.as_array() {
-                    let mut pills = IndexMap::new();
-                    for pill in pills_raw {
-                        let name = pill["name"]
-                            .as_str()
-                            .ok_or_else(|| {
-                                anyhow::anyhow!("pill name is not string")
-                            })?
-                            .to_owned();
-
-                        if pills.contains_key(&name) {
-                            Err(anyhow::anyhow!("duplicated pill name"))?
-                        }
-
-                        let drips_raw =
-                            pill["drip"].as_array().ok_or_else(|| {
-                                anyhow::anyhow!("drips are not in an array")
-                            })?;
-
-                        let mut drips = Vec::new();
-                        for drip_raw in drips_raw {
-                            let conf: DripConf =
-                                (drip_raw, &name, machine).try_into()?;
-                            drips.push((
-                                conf.tags,
-                                Drip {
-                                    root: conf.root,
-                                    inner: conf.inner,
-                                },
-                            ))
-                        }
-
-                        let pill = Pill {
-                            name: name.to_owned(),
-                            drip: DripApplyIncr::new(&envset)
-                                .apply_incr(drips)?,
-                        };
-
-                        if pill.non_empty() {
-                            pills.insert(name, pill);
-                        } else {
-                            log::info!("ignored empty pill <{}>", name)
-                        }
-                    }
-                    pills
-                } else {
-                    Err(anyhow::anyhow!("pills are not in an array"))?
-                }
-            } else {
-                IndexMap::new()
-            };
-
-            crate::utils::passed_tutorial(&toml)?;
-
-            Ok(Self { env, pills })
-        }
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(deny_unknown_fields)]
+    pub struct Drugstore {
+        pub env: toml::Value,
+        pub pill: Vec<Pill>,
     }
 
-    impl TryFrom<(&toml::Value, &String, &Machine)> for DripConf {
-        type Error = anyhow::Error;
-
-        fn try_from(
-            (toml, name, machine): (&toml::Value, &String, &Machine),
-        ) -> anyhow::Result<Self> {
-            let tags = toml.get("env").map_or_else(
-                || Ok(HashSet::new()),
-                |env| {
-                    env.as_array()
-                        .ok_or_else(|| anyhow::anyhow!("env is not an array"))?
-                        .into_iter()
-                        .map(|e| match e.as_str() {
-                            Some(s) => Ok(s.to_string()),
-                            None => {
-                                Err(anyhow::anyhow!("env item is not a string"))
-                            }
-                        })
-                        .collect::<anyhow::Result<HashSet<String>>>()
-                },
-            )?;
-
-            let root =
-                if let Some(root) = toml.get("root") {
-                    let quasi = AtomConf::try_from(root)?;
-                    Some(Atom {
-                        site: utils::expand_path(quasi.site.ok_or_else(
-                            || anyhow::anyhow!("no site found"),
-                        )?)?,
-                        repo: utils::ensured_dir(
-                            machine.repo.join(
-                                quasi.repo.unwrap_or_else(|| name.into()),
-                            ),
-                        )?,
-                        mode: quasi.mode.unwrap_or_else(|| machine.sync),
-                    })
-                } else {
-                    None
-                };
-
-            let remote = if let Some(remote) = toml.get("remote") {
-                remote.as_str().map(ToOwned::to_owned)
-            } else {
-                None
-            };
-            let stems = if let Some(stems) = toml.get("stem") {
-                if let Some(stems_raw) = stems.as_array() {
-                    let mut stems = Vec::new();
-                    for stem in stems_raw {
-                        let quasi = AtomConf::try_from(stem)?;
-                        let site = quasi
-                            .site
-                            .ok_or_else(|| anyhow::anyhow!("no site found"))?;
-                        stems.push(Atom {
-                            site: utils::expand_path(site.clone())?,
-                            repo: utils::expand_path(
-                                quasi.repo.unwrap_or(site),
-                            )?,
-                            mode: quasi.mode.unwrap_or(machine.sync),
-                        });
-                    }
-                    Some(stems)
-                } else {
-                    Err(anyhow::anyhow!("stem must be an array"))?
-                }
-            } else {
-                None
-            };
-            let ignore = if let Some(ignore) = toml.get("ignore") {
-                if let Some(ignore_raw) = ignore.as_array() {
-                    let mut ignore = Vec::new();
-                    for i in ignore_raw {
-                        let i = i.as_str().ok_or_else(|| {
-                            anyhow::anyhow!("ignore item is not a string")
-                        })?;
-                        ignore.push(i.to_owned());
-                    }
-                    Some(ignore)
-                } else {
-                    Err(anyhow::anyhow!("ignore must be an array"))?
-                }
-            } else {
-                None
-            };
-
-            use DripInner::*;
-            let var = match (remote, stems) {
-                (Some(_), Some(_)) => Err(anyhow::anyhow!(
-                    "can't have both git and stem at the same time"
-                ))?,
-                (Some(remote), None) => Some(GitModule { remote }),
-                (None, Some(stem)) => Some(Addicted {
-                    stem,
-                    ignore: ignore.unwrap_or_default(),
-                }),
-                (None, None) => None,
-            };
-
-            Ok(Self {
-                tags,
-                root,
-                inner: var,
-            })
-        }
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(deny_unknown_fields)]
+    pub struct Pill {
+        pub name: String,
+        pub drip: Vec<Drip>,
     }
 
-    impl TryFrom<&toml::Value> for AtomConf {
-        type Error = anyhow::Error;
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(deny_unknown_fields)]
+    pub struct Drip {
+        /// `tags` is resolved to trivial form during parsing
+        #[serde(alias = "env", default)]
+        pub tags: HashSet<String>,
+        pub root: Option<Atom>,
+        /// variants
+        #[serde(flatten)]
+        pub inner: Option<DripInner>,
+    }
 
-        fn try_from(value: &toml::Value) -> anyhow::Result<Self> {
-            if let Some(value) = value.as_str() {
-                Ok(AtomConf {
-                    site: Some(PathBuf::from(value)),
-                    repo: None,
-                    mode: None,
-                })
-            } else if let Some(value) = value.as_table() {
-                fn as_path(
-                    entry: &str, value: &toml::value::Map<String, toml::Value>,
-                ) -> Option<PathBuf> {
-                    value
-                        .get(entry)
-                        .map(|site| match site.as_str() {
-                            Some(site) => Some(PathBuf::from(site)),
-                            None => None,
-                        })
-                        .flatten()
-                }
-                let mode = match value.get("mode") {
-                    Some(mode) => match mode.as_str() {
-                        Some("copy") => Some(AtomMode::FileCopy),
-                        Some("link") => Some(AtomMode::Link),
-                        _ => None,
-                    },
-                    None => None,
-                };
-                Ok(AtomConf {
-                    site: as_path("site", value),
-                    repo: as_path("repo", value),
-                    mode,
-                })
-            } else {
-                Err(anyhow::anyhow!("root is neither a path nor an atom"))?
-            }
-        }
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(untagged)]
+    #[serde(deny_unknown_fields)]
+    pub enum DripInner {
+        GitModule {
+            /// url to remote git repo
+            remote: String,
+        },
+        Addicted {
+            /// Atoms are incremented from drips but dirs aren't expanded
+            stem: Vec<Atom>,
+            /// ignore
+            ignore: Vec<String>,
+        },
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(deny_unknown_fields)]
+    #[serde(untagged)]
+    pub enum Atom {
+        Plain(String),
+        Rich {
+            site: Option<PathBuf>,
+            repo: Option<PathBuf>,
+            mode: Option<AtomMode>,
+        },
     }
 }
 
-#[cfg(test)]
-mod test {
-    use super::*;
+impl TryFrom<(&str, &Machine)> for Drugstore {
+    type Error = anyhow::Error;
 
-    #[test]
-    fn atom_conf_parse() {
-        let toml = r#"
-            site = "site"
-            repo = "repo"
-            mode = "copy"
-        "#;
-        let conf: AtomConf = toml::from_str(toml).unwrap();
-        assert_eq!(conf.site, Some(PathBuf::from("site")));
-        assert_eq!(conf.repo, Some(PathBuf::from("repo")));
-        assert_eq!(conf.mode, Some(AtomMode::FileCopy));
+    fn try_from((buf, machine): (&str, &Machine)) -> anyhow::Result<Self> {
+        let conf: parse::Drugstore = toml::from_str(buf)?;
+        (conf, machine).try_into()
+    }
+}
 
-        let toml = r#"
-            site = "site"
-            mode = "link"
-        "#;
-        let conf: AtomConf = toml::from_str(toml).unwrap();
-        assert_eq!(conf.site, Some(PathBuf::from("site")));
-        assert_eq!(conf.repo, None);
-        assert_eq!(conf.mode, Some(AtomMode::Link));
+impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
+    type Error = anyhow::Error;
 
-        let toml = r#"
-            mode = "link"
-        "#;
-        let conf: AtomConf = toml::from_str(toml).unwrap();
-        assert_eq!(conf.site, None);
-        assert_eq!(conf.repo, None);
-        assert_eq!(conf.mode, Some(AtomMode::Link));
+    fn try_from(
+        (conf, machine): (parse::Drugstore, &Machine),
+    ) -> anyhow::Result<Self> {
+        let mut envmap = HashMap::new();
+        fn register_env<'e>(
+            env: &mut HashMap<String, HashSet<String>>,
+            worklist: &mut Vec<&'e str>, toml: &'e toml::Value,
+        ) {
+            fn register<'e>(
+                env: &mut HashMap<String, HashSet<String>>,
+                worklist: &Vec<&'e str>, s: &'e str,
+            ) {
+                env.entry(s.to_owned())
+                    .or_default()
+                    .extend(worklist.clone().into_iter().map(ToOwned::to_owned))
+            }
+            if let Some(s) = toml.as_str() {
+                register(env, worklist, s);
+            } else if let Some(m) = toml.as_table() {
+                for (k, v) in m {
+                    register(env, worklist, k);
+                    worklist.push(k);
+                    register_env(env, worklist, v);
+                    worklist.pop();
+                }
+            }
+        }
+        register_env(&mut envmap, &mut Vec::new(), &conf.env);
+        let envset = EnvMap { map: envmap }.resolve(machine)?;
+
+        let mut pills = IndexMap::new();
+        for pill in conf.pill {
+            if pills.contains_key(&pill.name) {
+                Err(anyhow::anyhow!("duplicated pill name"))?
+            }
+
+            let mut drips = Vec::new();
+            for conf in pill.drip {
+                drips.push((
+                    conf.tags.to_owned(),
+                    (conf, &pill.name, machine).try_into()?,
+                ))
+            }
+
+            let pill = Pill {
+                name: pill.name.to_owned(),
+                drip: DripApplyIncr::new(&envset).apply_incr(drips)?,
+            };
+
+            if pill.non_empty() {
+                pills.insert(pill.name.to_owned(), pill);
+            } else {
+                log::info!("ignored empty pill <{}>", pill.name)
+            }
+        }
+
+        todo!()
+    }
+}
+
+impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
+    type Error = anyhow::Error;
+
+    fn try_from(
+        (conf, name, machine): (parse::Drip, &String, &Machine),
+    ) -> anyhow::Result<Self> {
+        let tags = conf.tags;
+
+        let root = if let Some(root) = conf.root {
+            let quasi: QuasiAtom = root.try_into()?;
+            Some(Atom {
+                site: utils::expand_path(
+                    quasi.site
+                        .ok_or_else(|| anyhow::anyhow!("no site found"))?,
+                )?,
+                repo: utils::ensured_dir(
+                    machine.repo.join(quasi.repo.unwrap_or_else(|| name.into())),
+                )?,
+                mode: quasi.mode.unwrap_or_else(|| machine.sync),
+            })
+        } else {
+            None
+        };
+
+        let inner =
+            match conf.inner {
+                Some(parse::DripInner::GitModule { remote }) => {
+                    Some(DripInner::GitModule { remote })
+                }
+                Some(parse::DripInner::Addicted { stem, ignore }) => {
+                    let mut new_stem = Vec::new();
+                    for conf in stem {
+                        let quasi: QuasiAtom = conf.try_into()?;
+                        let site = quasi
+                            .site
+                            .ok_or_else(|| anyhow::anyhow!("no site found"))?;
+                        new_stem.push(Atom {
+                            site: utils::expand_path(site)?,
+                            repo: utils::ensured_dir(machine.repo.join(
+                                quasi.repo.unwrap_or_else(|| name.into()),
+                            ))?,
+                            mode: quasi.mode.unwrap_or_else(|| machine.sync),
+                        })
+                    }
+                    Some(DripInner::Addicted {
+                        stem: new_stem,
+                        ignore,
+                    })
+                }
+                None => None,
+            };
+
+        Ok(Self { root, inner })
+    }
+}
+
+impl TryFrom<parse::Atom> for QuasiAtom {
+    type Error = anyhow::Error;
+
+    fn try_from(conf: parse::Atom) -> anyhow::Result<Self> {
+        match conf {
+            parse::Atom::Plain(s) => Ok(QuasiAtom {
+                site: Some(s.into()),
+                repo: None,
+                mode: None,
+            }),
+            parse::Atom::Rich { site, repo, mode } => {
+                Ok(QuasiAtom { site, repo, mode })
+            }
+        }
     }
 }

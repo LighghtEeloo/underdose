@@ -20,10 +20,56 @@ pub struct Machine {
     pub sync: AtomMode,
     pub undo: usize,
     pub ignore: IgnoreSetBuilder,
+    pub overdose: bool,
     pub submodule: bool,
     pub symlink: bool,
     pub cleanup_site: bool,
     pub cleanup_repo: bool,
+}
+
+mod parse {
+    use super::*;
+
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(deny_unknown_fields)]
+    pub struct Machine {
+        pub name: String,
+        pub env: HashSet<String>,
+        pub repo: PathBuf,
+        pub defaults: Defaults,
+        pub features: Features,
+        pub cleanup: Cleanup,
+        pub tutorial: Option<()>,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(deny_unknown_fields)]
+    pub struct Defaults {
+        pub sync: AtomMode,
+        pub undo: usize,
+        pub ignore: Vec<String>,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(deny_unknown_fields)]
+    pub struct Features {
+        pub overdose: bool,
+        pub submodule: bool,
+        pub symlink: bool,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(deny_unknown_fields)]
+    pub struct Cleanup {
+        pub empty_dir: CleanupEmptyDir,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(deny_unknown_fields)]
+    pub struct CleanupEmptyDir {
+        pub site: bool,
+        pub repo: bool,
+    }
 }
 
 impl TryFrom<&str> for Machine {
@@ -44,7 +90,12 @@ impl TryFrom<parse::Machine> for Machine {
             env,
             repo,
             defaults: parse::Defaults { sync, undo, ignore },
-            features: parse::Features { submodule, symlink },
+            features:
+                parse::Features {
+                    overdose,
+                    submodule,
+                    symlink,
+                },
             cleanup:
                 parse::Cleanup {
                     empty_dir:
@@ -67,49 +118,11 @@ impl TryFrom<parse::Machine> for Machine {
             sync,
             undo,
             ignore: IgnoreSetBuilder::new().chain(ignore.iter()),
+            overdose,
             submodule,
             symlink,
             cleanup_site,
             cleanup_repo,
         })
-    }
-}
-
-mod parse {
-    use super::*;
-
-    #[derive(Serialize, Deserialize, Debug)]
-    pub struct Machine {
-        pub name: String,
-        pub env: HashSet<String>,
-        pub repo: PathBuf,
-        pub defaults: Defaults,
-        pub features: Features,
-        pub cleanup: Cleanup,
-        pub tutorial: Option<()>,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    pub struct Defaults {
-        pub sync: AtomMode,
-        pub undo: usize,
-        pub ignore: Vec<String>,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    pub struct Features {
-        pub submodule: bool,
-        pub symlink: bool,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    pub struct Cleanup {
-        pub empty_dir: CleanupEmptyDir,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    pub struct CleanupEmptyDir {
-        pub site: bool,
-        pub repo: bool,
     }
 }
