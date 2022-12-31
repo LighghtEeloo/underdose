@@ -6,7 +6,7 @@ use git2::Repository;
 use std::io;
 use underdose::{
     repo::Dirt,
-    task::{Exec, PillTask, Synthesis, TaskArrow},
+    dynamics::{Execution, PillTask, Synthesis, TaskArrow},
     utils::{Conf, Prompt},
     Drugstore, Machine,
 };
@@ -78,7 +78,7 @@ fn main() -> anyhow::Result<()> {
             match s {
                 "y" => {
                     println!("executing...");
-                    drip_task.exec()?;
+                    drip_task.execution()?;
                 }
                 "!" => {
                     println!("abort!");

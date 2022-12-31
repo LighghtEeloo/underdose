@@ -1,31 +1,16 @@
-use crate::drugstore::{Atom, AtomMode, DripInner, Pill};
-use crate::utils;
+use crate::store::{Atom, AtomMode, DripInner, Pill};
 use crate::Machine;
+use crate::{
+    dynamics::{Execution, RepoToSite, SiteToRepo, Synthesis, TaskArrow},
+    utils::{self, IgnoreSet, IgnoreSetBuilder, Prompt},
+};
 use colored::Colorize;
 use git_url_parse::GitUrl;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
-
-#[derive(Clone, Copy)]
-pub enum TaskArrow {
-    SiteToRepo,
-    RepoToSite,
-}
-pub use TaskArrow::*;
-
-pub trait Synthesis {
-    type Task;
-    fn synthesis(
-        &self, machine: &Machine, arrow: TaskArrow,
-    ) -> anyhow::Result<Self::Task>;
-}
-
-pub trait Exec {
-    fn exec(self) -> anyhow::Result<()>;
-}
+use std::{fs, io};
 
 pub struct PillTask {
     pub name: String,
@@ -87,8 +72,6 @@ impl Display for AtomTask {
 }
 
 mod synthesis {
-    use crate::utils::{IgnoreSet, IgnoreSetBuilder};
-
     use super::*;
 
     impl Synthesis for Pill {
@@ -228,19 +211,15 @@ mod synthesis {
 }
 
 mod exec {
-    use std::io;
-
-    use crate::utils::Prompt;
-
     use super::*;
 
-    impl Exec for PillTask {
-        fn exec(self) -> anyhow::Result<()> {
+    impl Execution for PillTask {
+        fn execution(self) -> anyhow::Result<()> {
             match self.inner {
                 PillTaskInner::GitModule { remote } => todo!(),
                 PillTaskInner::Addicted { atoms } => {
                     for atom in atoms {
-                        atom.exec()?;
+                        atom.execution()?;
                     }
                 }
             }
@@ -248,8 +227,8 @@ mod exec {
         }
     }
 
-    impl Exec for AtomTask {
-        fn exec(self) -> anyhow::Result<()> {
+    impl Execution for AtomTask {
+        fn execution(self) -> anyhow::Result<()> {
             fs::create_dir_all(self.dst.parent().ok_or_else(|| {
                 anyhow::anyhow!("no parent for destination")
             })?)?;

@@ -10,7 +10,7 @@ use std::{
 };
 
 use crate::utils::IgnoreSetBuilder;
-use crate::{drugstore::AtomMode, utils};
+use crate::{store::AtomMode, utils};
 
 #[derive(Debug, Clone)]
 pub struct Machine {

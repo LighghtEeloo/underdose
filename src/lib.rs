@@ -1,10 +1,10 @@
 #![allow(unused)]
 
-pub mod drugstore;
+pub mod store;
 pub mod machine;
 pub mod repo;
-pub mod task;
 pub mod utils;
+pub mod dynamics;
 
-pub use drugstore::Drugstore;
+pub use store::Drugstore;
 pub use machine::Machine;
