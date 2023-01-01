@@ -328,31 +328,28 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
         };
 
         use parse::DripInner::*;
-        let inner =
-            match conf.inner {
-                GitModule { remote } => Some(DripInner::GitModule { remote }),
-                Addicted { stem, ignore } => {
-                    let mut new_stem = Vec::new();
-                    for conf in stem.unwrap_or_default() {
-                        let quasi: QuasiAtom = conf.try_into()?;
-                        let site = quasi
-                            .site
-                            .ok_or_else(|| anyhow::anyhow!("no site found"))?;
-                        new_stem.push(Atom {
-                            site: utils::expand_path(site)?,
-                            repo: utils::expand_path(machine.repo.join(
-                                quasi.repo.unwrap_or_else(|| name.into()),
-                            ))?,
-                            mode: quasi.mode.unwrap_or_else(|| machine.sync),
-                        })
-                    }
-                    Some(DripInner::Addicted {
-                        stem: new_stem,
-                        ignore: ignore.unwrap_or_default(),
+        let inner = match conf.inner {
+            GitModule { remote } => Some(DripInner::GitModule { remote }),
+            Addicted { stem, ignore } => {
+                let mut new_stem = Vec::new();
+                for conf in stem.unwrap_or_default() {
+                    let quasi: QuasiAtom = conf.try_into()?;
+                    let site = quasi
+                        .site
+                        .ok_or_else(|| anyhow::anyhow!("no site found"))?;
+                    new_stem.push(Atom {
+                        site: site.clone(),
+                        repo: quasi.repo.unwrap_or_else(|| site.into()),
+                        mode: quasi.mode.unwrap_or_else(|| machine.sync),
                     })
                 }
-                Empty => None,
-            };
+                Some(DripInner::Addicted {
+                    stem: new_stem,
+                    ignore: ignore.unwrap_or_default(),
+                })
+            }
+            Empty => None,
+        };
 
         Ok(Self { root, inner })
     }

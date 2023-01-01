@@ -84,18 +84,18 @@ pub fn passed_tutorial(toml: &toml::Value) -> anyhow::Result<()> {
 }
 
 pub fn ensured_dir<P: AsRef<Path>>(dir_path: P) -> anyhow::Result<PathBuf> {
-    let path = canonicalize_parent(dir_path)?;
-    if !path.exists() {
-        std::fs::create_dir_all(&path)?;
+    let dir_path = dir_path.as_ref().to_path_buf();
+    if !dir_path.exists() {
+        std::fs::create_dir_all(&dir_path)?;
     }
-    Ok(path)
+    Ok(dir_path)
 }
 
 pub fn expand_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
     Ok(PathBuf::from(shellexpand::path::tilde(path.as_ref())))
 }
 
-pub fn canonicalize_parent<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
+pub fn canonicalize_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
     let path = expand_path(path)?;
     let parent = path.parent().ok_or_else(|| {
         anyhow::anyhow!("path <{}> should have parent", path.display())
