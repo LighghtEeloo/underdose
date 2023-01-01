@@ -55,8 +55,9 @@ Contains two parts.
 [[pill]]
 name = "nvim"
 [[pill.drip]]
-site = "~/.config/nvim/"
-stem = ["./"]
+site = "~/.config/nvim"
+stem = [""]
+# "" stands for current dir
 ```
 
 The configuration file for local `underdose`, named `Underdose.toml`, can be accessed through CLI (`ud config`, see below). A sample (and detailed tutorial) can be found in `template/Drugstore.toml`.
@@ -105,8 +106,11 @@ The following sections demonstrate the technical details of `underdose`.
 
 ### Roadmap
 
+- [ ] Carefully design the task primitives.
+- [ ] Snapshot before sync. Use a table of hashes for snapshot. Use a file-lock for parallel operations.
+- [ ] Undo.
 - [ ] Automatic sync. Allow scheduled run for trivial tasks, but abort when anything complicated emerges. Useful for auto git fetch and pour when your remote drugstore updates.
-- [ ] Probe for changes during `ud sync` even without being asked to. It's like running `git fetch` from time to time without asking can actually save your time, but to your drips instead.
+- [ ] Probe for changes during `ud sync` even without being asked to. It's like running `git fetch` from time to time without asking can actually save your time, but to your pills instead.
 - [ ] Symlink support. Treat symlink as the file it points to and keeps track of both the pointee and pointer, namely sync the file and create the symlink automatically.
 - [x] Cascaded item under dir track. Assign a dir some option and some specific files other options.
 - [x] Globs in paths.

@@ -3,39 +3,60 @@ use std::{
     io::{self, Read, Write},
     path::{Path, PathBuf},
 };
+use toml_edit::Document;
 
 #[derive(Debug)]
-pub struct Conf<'a> {
-    pub template: &'a str,
+pub struct Conf {
+    pub template: String,
     pub path: PathBuf,
 }
 
-impl Conf<'_> {
-    pub fn ensure_exist(self) -> anyhow::Result<Self> {
+impl Conf {
+    pub fn ensure_exist(&self) -> anyhow::Result<&Self> {
         // self.path = canonicalize_parent(&self.path)?;
         if !self.path.exists() {
             std::fs::create_dir_all(
                 self.path.parent().expect("config path should have parent"),
             )?;
-            std::fs::write(&self.path, self.template)?;
+            std::fs::write(&self.path, &self.template)?;
         }
         Ok(self)
     }
-    pub fn ensure_force(self) -> anyhow::Result<Self> {
+    pub fn ensure_force(&self) -> anyhow::Result<&Self> {
         // self.path = canonicalize_parent(&self.path)?;
         if !self.path.exists() {
             std::fs::create_dir_all(
                 self.path.parent().expect("config path should have parent"),
             )?;
         }
-        std::fs::write(&self.path, self.template)?;
+        std::fs::write(&self.path, &self.template)?;
         Ok(self)
     }
-    pub fn read(self) -> anyhow::Result<String> {
+    pub fn read(&self) -> anyhow::Result<String> {
         let mut buf = String::new();
         let mut file = std::fs::File::open(&self.path)?;
         file.read_to_string(&mut buf)?;
         Ok(buf)
+    }
+}
+
+#[derive(Debug)]
+pub struct UnderdoseConf {
+    pub template: toml_edit::Document,
+}
+
+impl UnderdoseConf {
+    pub fn new(name: String) -> Self {
+        let toml = include_str!("../templates/Underdose.toml");
+        let mut template = toml.parse::<Document>().expect("invalid doc");
+        template["name"] = toml_edit::value(name);
+        Self { template }
+    }
+    pub fn conf(self, path: PathBuf) -> Conf {
+        Conf {
+            template: self.template.to_string(),
+            path,
+        }
     }
 }
 
