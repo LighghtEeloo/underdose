@@ -1,16 +1,7 @@
-use serde::{Deserialize, Serialize};
-use std::fmt::Display;
-use std::fs::{self, File};
-use std::io::Read;
-use std::path::Path;
-use std::str::FromStr;
-use std::{
-    collections::{HashMap, HashSet},
-    path::PathBuf,
-};
-
 use crate::utils::IgnoreSetBuilder;
 use crate::{store::AtomMode, utils};
+use serde::{Deserialize, Serialize};
+use std::{collections::HashSet, path::PathBuf};
 
 #[derive(Debug, Clone)]
 pub struct Machine {

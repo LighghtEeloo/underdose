@@ -89,62 +89,6 @@ pub enum DripInner {
     },
 }
 
-struct DripApplyIncr<'a> {
-    pub drip: Drip,
-    pub envset: &'a EnvSet,
-}
-
-impl<'a> DripApplyIncr<'a> {
-    fn new(envset: &'a EnvSet) -> Self {
-        DripApplyIncr {
-            drip: Drip {
-                root: None,
-                inner: None,
-            },
-            envset,
-        }
-    }
-    fn apply_force(&mut self, drip: Drip) -> anyhow::Result<()> {
-        use DripInner::*;
-        self.drip.root = match (drip.root, self.drip.root.clone()) {
-            (Some(_), Some(_)) => {
-                Err(anyhow::anyhow!("root set multiple times"))?
-            }
-            (new @ Some(_), _) => new,
-            (None, old) => old,
-        };
-        self.drip.inner = match (drip.inner, self.drip.inner.clone()) {
-            (
-                Some(Addicted {
-                    stem: new_stem,
-                    ignore: new_ignore,
-                }),
-                Some(Addicted {
-                    mut stem,
-                    mut ignore,
-                }),
-            ) => {
-                stem.extend(new_stem);
-                ignore.extend(new_ignore);
-                Some(Addicted { stem, ignore })
-            }
-            (new @ Some(_), _) => new,
-            (None, old) => old,
-        };
-        Ok(())
-    }
-    fn apply_incr(
-        mut self, drips: Vec<(HashSet<String>, Drip)>,
-    ) -> anyhow::Result<Drip> {
-        for (tags, drip) in drips {
-            if self.envset.check_all(&tags) {
-                self.apply_force(drip)?;
-            }
-        }
-        Ok(self.drip)
-    }
-}
-
 #[derive(Serialize, Debug, Clone)]
 pub struct Atom {
     pub site: PathBuf,
@@ -247,7 +191,7 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
     type Error = anyhow::Error;
 
     fn try_from(
-        (conf, machine): (parse::Drugstore, &Machine),
+        (store, machine): (parse::Drugstore, &Machine),
     ) -> anyhow::Result<Self> {
         let mut map = HashMap::new();
         fn register_env<'e>(
@@ -273,20 +217,20 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
                 }
             }
         }
-        register_env(&mut map, &mut Vec::new(), &conf.env);
+        register_env(&mut map, &mut Vec::new(), &store.env);
         let env = EnvMap { map }.resolve(machine)?;
 
         let mut pills = IndexMap::new();
-        for pill in conf.pill {
+        for pill in store.pill {
             if pills.contains_key(&pill.name) {
                 Err(anyhow::anyhow!("duplicated pill name"))?
             }
 
             let mut drips = Vec::new();
-            for conf in pill.drip {
+            for drip in pill.drip {
                 drips.push((
-                    conf.tags.to_owned(),
-                    (conf, &pill.name, machine).try_into()?,
+                    drip.tags.to_owned(),
+                    (drip, &pill.name, machine).try_into()?,
                 ))
             }
 
@@ -306,15 +250,69 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
     }
 }
 
+struct DripApplyIncr<'a> {
+    pub drip: Drip,
+    pub envset: &'a EnvSet,
+}
+
+impl<'a> DripApplyIncr<'a> {
+    fn new(envset: &'a EnvSet) -> Self {
+        DripApplyIncr {
+            drip: Drip {
+                root: None,
+                inner: None,
+            },
+            envset,
+        }
+    }
+    fn apply_force(&mut self, drip: Drip) -> anyhow::Result<()> {
+        use DripInner::*;
+        self.drip.root = match (drip.root, self.drip.root.clone()) {
+            (Some(_), Some(_)) => {
+                Err(anyhow::anyhow!("root set multiple times"))?
+            }
+            (new @ Some(_), _) => new,
+            (None, old) => old,
+        };
+        self.drip.inner = match (drip.inner, self.drip.inner.clone()) {
+            (
+                Some(Addicted {
+                    stem: new_stem,
+                    ignore: new_ignore,
+                }),
+                Some(Addicted {
+                    mut stem,
+                    mut ignore,
+                }),
+            ) => {
+                stem.extend(new_stem);
+                ignore.extend(new_ignore);
+                Some(Addicted { stem, ignore })
+            }
+            (new @ Some(_), _) => new,
+            (None, old) => old,
+        };
+        Ok(())
+    }
+    fn apply_incr(
+        mut self, drips: Vec<(HashSet<String>, Drip)>,
+    ) -> anyhow::Result<Drip> {
+        for (tags, drip) in drips {
+            if self.envset.check_all(&tags) {
+                self.apply_force(drip)?;
+            }
+        }
+        Ok(self.drip)
+    }
+}
+
 impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
     type Error = anyhow::Error;
 
     fn try_from(
-        (conf, name, machine): (parse::Drip, &String, &Machine),
+        (drip, name, machine): (parse::Drip, &String, &Machine),
     ) -> anyhow::Result<Self> {
-        let tags = conf.tags;
-
-        let root = if let Some(root) = conf.root {
+        let root = if let Some(root) = drip.root {
             let quasi: QuasiAtom = root.try_into()?;
             Some(Atom {
                 site: utils::expand_path(
@@ -334,7 +332,7 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
         };
 
         use parse::DripInner::*;
-        let inner = match conf.inner {
+        let inner = match drip.inner {
             GitModule { remote } => Some(DripInner::GitModule { remote }),
             Addicted { stem, ignore } => {
                 let mut new_stem = Vec::new();
@@ -364,8 +362,8 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
 impl TryFrom<parse::Atom> for QuasiAtom {
     type Error = anyhow::Error;
 
-    fn try_from(conf: parse::Atom) -> anyhow::Result<Self> {
-        match conf {
+    fn try_from(atom: parse::Atom) -> anyhow::Result<Self> {
+        match atom {
             parse::Atom::Plain(s) => Ok(QuasiAtom {
                 site: Some(s.into()),
                 repo: None,

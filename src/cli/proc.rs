@@ -5,5 +5,4 @@ pub struct Process {
     pub drugstore_path: PathBuf,
 }
 
-impl Process {
-}
+impl Process {}
