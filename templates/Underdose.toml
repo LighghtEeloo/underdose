@@ -38,4 +38,4 @@ repo = false
 
 # After carefully editing the rest of the file, remove this line and below to
 # make this `Underdose.toml` file valid and ready to use.
-[tutorial.underdose]
+[tutorial]

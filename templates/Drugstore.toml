@@ -6,8 +6,8 @@
 [env.sys.mac]
 [env.sys.linux.arch]
 [env.sys.linux.nixos]
-[env.school]
-[env.office]
+[env.school.mac]
+[env.home.arch]
 # Suppose your `Underdose.toml` has `env = ["mac"]`, then you env will actually
 # be `env = ["sys", "mac"]`; if you have `env = ["arch", "school"]`, then you
 # env will be `env = ["sys", "linux", "arch", "school"]`. Basically, all nodes
@@ -38,13 +38,15 @@ remote = "git@github.com:path/to/awesome_conf.git"
 [[pill]]
 name = "emacs"
 [[pill.drip]]
-root = "~/.config/emacs"
 stem = ["init.el"]
-# This outputs { root = "~/.config/emacs/", stem = ["init.el"] } for everyone...
+[[pill.drip]]
+env = ["linux"]
+root = "~/.config/emacs"
+# This outputs { root = "~/.config/emacs/", stem = ["init.el"] } for linux devices...
 [[pill.drip]]
 env = ["mac"]
 root = "~/.emacs.d"
-# ...except mac, which gets { root = "~/.emacs.d/", stem = ["init.el"] }.
+# ...but not mac, which gets { root = "~/.emacs.d/", stem = ["init.el"] }.
 
 # A pill with two different configurations on the same software, but share same
 # common files.
@@ -66,4 +68,4 @@ stem = [{ site = ".zsh_aliases", repo = ".zsh_aliases_linux" }]
 
 # After carefully editing the rest of the file, remove this line and below to
 # make this `DrugStore.toml` file valid and ready to use.
-[tutorial.drugstore]
+[tutorial]
