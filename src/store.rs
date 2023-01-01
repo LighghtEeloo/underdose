@@ -58,7 +58,13 @@ pub struct Pill {
 
 impl Pill {
     pub fn non_empty(&self) -> bool {
-        !self.drip.root.is_none() && !self.drip.inner.is_none()
+        !matches!(
+            self.drip,
+            Drip {
+                root: None,
+                inner: None
+            }
+        )
     }
 }
 
@@ -250,11 +256,11 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
         ) {
             fn register<'e>(
                 env: &mut HashMap<String, HashSet<String>>,
-                worklist: &Vec<&'e str>, s: &'e str,
+                worklist: &'e [&'e str], s: &'e str,
             ) {
                 env.entry(s.to_owned())
                     .or_default()
-                    .extend(worklist.clone().into_iter().map(ToOwned::to_owned))
+                    .extend(worklist.iter().map(|s| s.to_string()))
             }
             if let Some(s) = toml.as_str() {
                 register(env, worklist, s);
@@ -321,7 +327,7 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
                         .repo
                         .join(quasi.repo.unwrap_or_else(|| name.into())),
                 )?,
-                mode: quasi.mode.unwrap_or_else(|| machine.sync),
+                mode: quasi.mode.unwrap_or(machine.sync),
             })
         } else {
             None
@@ -339,8 +345,8 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
                         .ok_or_else(|| anyhow::anyhow!("no site found"))?;
                     new_stem.push(Atom {
                         site: site.clone(),
-                        repo: quasi.repo.unwrap_or_else(|| site.into()),
-                        mode: quasi.mode.unwrap_or_else(|| machine.sync),
+                        repo: quasi.repo.unwrap_or(site),
+                        mode: quasi.mode.unwrap_or(machine.sync),
                     })
                 }
                 Some(DripInner::Addicted {

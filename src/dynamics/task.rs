@@ -80,8 +80,8 @@ mod synthesis {
         fn synthesis(
             &self, machine: &Machine, arrow: TaskArrow,
         ) -> anyhow::Result<Self::Task> {
-            let ref name = self.name;
-            let ref drip = self.drip;
+            let name = &self.name;
+            let drip = &self.drip;
             log::trace!("synthesizing drip <{}>", name);
             let root = drip.root.as_ref().ok_or_else(|| {
                 anyhow::anyhow!("no root set for drip <{}>", name)
@@ -172,8 +172,8 @@ mod synthesis {
                 log::debug!("ignoring {}", src.display())
             } else if src.is_file() {
                 tasks.push(AtomTask {
-                    src: src.to_owned(),
-                    dst: dst.to_owned(),
+                    src,
+                    dst,
                     mode: AtomMode::FileCopy,
                 })
             } else if src.is_dir() {
