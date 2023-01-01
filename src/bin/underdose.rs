@@ -7,8 +7,7 @@ use std::io;
 use underdose::{
     cli::Cli,
     dynamics::{Execution, PillTask, Synthesis, TaskArrow},
-    repo::Dirt,
-    utils::{Conf, Prompt},
+    utils::{repo::Dirt, Conf, Prompt, DRUGSTORE_TOML, UNDERDOSE_TOML},
     Drugstore, Machine,
 };
 
@@ -23,7 +22,7 @@ fn main() -> anyhow::Result<()> {
     // read underdose_conf into machine
     let underdose_conf_name = "Underdose.toml";
     let underdose_conf = Conf {
-        template: include_str!("../../templates/Underdose.toml").to_owned(),
+        template: UNDERDOSE_TOML.to_owned(),
         path: cli.config.unwrap_or_else(|| {
             underdose_dirs.config_dir().join(underdose_conf_name)
         }),
@@ -49,7 +48,7 @@ fn main() -> anyhow::Result<()> {
     // read drugstore_conf into store
     let drugstore_conf_name = "Drugstore.toml";
     let drugstore_conf = Conf {
-        template: include_str!("../../templates/Drugstore.toml").to_owned(),
+        template: DRUGSTORE_TOML.to_owned(),
         path: machine.repo.join(drugstore_conf_name),
     };
     log::info!(

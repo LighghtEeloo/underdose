@@ -1,7 +1,6 @@
 use crate::{
     dynamics::{Execution, PillTask, Synthesis, TaskArrow},
-    repo::Dirt,
-    utils::{Conf, Prompt, UnderdoseConf},
+    utils::{repo::Dirt, Conf, Prompt, UnderdoseConf},
     Drugstore, Machine,
 };
 use clap::{Parser, Subcommand};

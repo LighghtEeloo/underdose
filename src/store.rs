@@ -316,7 +316,7 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
                         .site
                         .ok_or_else(|| anyhow::anyhow!("no site found"))?,
                 )?,
-                repo: utils::ensured_dir(
+                repo: utils::expand_path(
                     machine
                         .repo
                         .join(quasi.repo.unwrap_or_else(|| name.into())),
@@ -340,7 +340,7 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
                             .ok_or_else(|| anyhow::anyhow!("no site found"))?;
                         new_stem.push(Atom {
                             site: utils::expand_path(site)?,
-                            repo: utils::ensured_dir(machine.repo.join(
+                            repo: utils::expand_path(machine.repo.join(
                                 quasi.repo.unwrap_or_else(|| name.into()),
                             ))?,
                             mode: quasi.mode.unwrap_or_else(|| machine.sync),

@@ -128,6 +128,41 @@ mod synthesis {
     }
 
     impl<'a> AddictedDrip<'a> {
+        /// Resolve stem atoms to absolute file paths; requires a direction
+        fn resolve_atoms(
+            self, arrow: TaskArrow,
+        ) -> anyhow::Result<Vec<AtomTask>> {
+            let AddictedDrip { root, stem, .. } = self;
+            log::trace!(
+                "\nresolving site: [{}]\n       && repo: [{}]",
+                self.root.site.display(),
+                self.root.repo.display()
+            );
+            let mut tasks = Vec::new();
+            for atom in stem {
+                if matches!(atom.mode, AtomMode::Link) {
+                    // Note: symlinks always have repo -> site orientation
+                    tasks.push(AtomTask {
+                        src: utils::canonicalize_parent(
+                            root.repo.join(&atom.repo),
+                        )?,
+                        dst: utils::trim_path(root.site.join(&atom.site))?,
+                        mode: AtomMode::Link,
+                    })
+                } else {
+                    let (src, dst) = match arrow {
+                        SiteToRepo => (&atom.site, &atom.repo),
+                        RepoToSite => (&atom.repo, &atom.site),
+                    };
+                    self.atoms_copy(
+                        &mut tasks,
+                        &root.site.join(src),
+                        &root.repo.join(dst),
+                    )?
+                }
+            }
+            Ok(tasks)
+        }
         fn atoms_copy(
             self, tasks: &mut Vec<AtomTask>, src: &Path, dst: &Path,
         ) -> anyhow::Result<()> {
@@ -154,36 +189,6 @@ mod synthesis {
                 log::warn!("unsupported file detected: {}", src.display())
             }
             Ok(())
-        }
-        /// Resolve stem atoms to absolute file paths; requires a direction
-        fn resolve_atoms(
-            self, arrow: TaskArrow,
-        ) -> anyhow::Result<Vec<AtomTask>> {
-            let AddictedDrip { root, stem, .. } = self;
-            let mut tasks = Vec::new();
-            for atom in stem {
-                if matches!(atom.mode, AtomMode::Link) {
-                    // Note: symlinks always have repo -> site orientation
-                    tasks.push(AtomTask {
-                        src: utils::canonicalize_parent(
-                            root.repo.join(&atom.repo),
-                        )?,
-                        dst: utils::trim_path(root.site.join(&atom.site))?,
-                        mode: AtomMode::Link,
-                    })
-                } else {
-                    let (src, dst) = match arrow {
-                        SiteToRepo => (&atom.site, &atom.repo),
-                        RepoToSite => (&atom.repo, &atom.site),
-                    };
-                    self.atoms_copy(
-                        &mut tasks,
-                        &root.site.join(src),
-                        &root.repo.join(dst),
-                    )?
-                }
-            }
-            Ok(tasks)
         }
     }
 

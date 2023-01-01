@@ -1,9 +1,20 @@
+pub mod repo;
+
 use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
 use std::{
     io::{self, Read, Write},
     path::{Path, PathBuf},
 };
 use toml_edit::Document;
+
+pub const UNDERDOSE_TOML: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/templates/Underdose.toml"
+));
+pub const DRUGSTORE_TOML: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/templates/Drugstore.toml"
+));
 
 #[derive(Debug)]
 pub struct Conf {
@@ -47,7 +58,7 @@ pub struct UnderdoseConf {
 
 impl UnderdoseConf {
     pub fn new(name: String) -> Self {
-        let toml = include_str!("../templates/Underdose.toml");
+        let toml = UNDERDOSE_TOML;
         let mut template = toml.parse::<Document>().expect("invalid doc");
         template["name"] = toml_edit::value(name);
         Self { template }
