@@ -1,5 +1,5 @@
 use crate::{
-    dynamics::{Execution, PillTask, Synthesis, TaskArrow},
+    dynamics::{AtomArrow, Execution, PillTask, Synthesis},
     utils::{repo::Dirt, Conf, Prompt, UnderdoseConf},
     Drugstore, Machine,
 };

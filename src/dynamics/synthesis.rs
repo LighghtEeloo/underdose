@@ -2,8 +2,8 @@ use crate::store::{Atom, AtomMode, DripInner, Pill};
 use crate::Machine;
 use crate::{
     dynamics::{
-        AtomTask, PillTask, PillTaskInner, RepoToSite, SiteToRepo, Synthesis,
-        TaskArrow,
+        AtomArrow, AtomTask, PillTask, PillTaskInner, RepoToSite, SiteToRepo,
+        Synthesis,
     },
     utils::{self, IgnoreSet},
 };
@@ -13,7 +13,7 @@ impl Synthesis for Pill {
     type Task = PillTask;
 
     fn synthesis(
-        &self, machine: &Machine, arrow: TaskArrow,
+        &self, machine: &Machine, arrow: AtomArrow,
     ) -> anyhow::Result<Self::Task> {
         let name = &self.name;
         let drip = &self.drip;
@@ -64,7 +64,7 @@ struct AddictedDrip<'a> {
 
 impl<'a> AddictedDrip<'a> {
     /// Resolve stem atoms to absolute file paths; requires a direction
-    fn resolve_atoms(self, arrow: TaskArrow) -> anyhow::Result<Vec<AtomTask>> {
+    fn resolve_atoms(self, arrow: AtomArrow) -> anyhow::Result<Vec<AtomTask>> {
         let AddictedDrip { root, stem, .. } = self;
         log::trace!(
             "\nresolving site: [{}]\n       && repo: [{}]",
@@ -126,7 +126,7 @@ impl Synthesis for Atom {
     type Task = AtomTask;
 
     fn synthesis(
-        &self, machine: &Machine, arrow: TaskArrow,
+        &self, machine: &Machine, arrow: AtomArrow,
     ) -> anyhow::Result<Self::Task> {
         log::trace!("synthesizing atom <{:?}>", self);
         Ok(match arrow {

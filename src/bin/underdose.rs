@@ -6,7 +6,7 @@ use git2::Repository;
 use std::io;
 use underdose::{
     cli::Cli,
-    dynamics::{Execution, PillTask, Synthesis, TaskArrow},
+    dynamics::{AtomArrow, Execution, PillTask, Synthesis},
     utils::{repo::Dirt, Conf, Prompt, DRUGSTORE_TOML, UNDERDOSE_TOML},
     Drugstore, Machine,
 };
@@ -75,7 +75,7 @@ fn main() -> anyhow::Result<()> {
 
     // synthesize and execute tasks
     for (_, pill) in &store.pills {
-        let drip_task = pill.synthesis(&machine, TaskArrow::RepoToSite)?;
+        let drip_task = pill.synthesis(&machine, AtomArrow::RepoToSite)?;
         println!("{}", drip_task);
 
         Prompt::new("proceed? [N/y/!] ").process(|s| {
