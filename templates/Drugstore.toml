@@ -26,10 +26,15 @@ root = "~/.config/nvim"
 stem = [""]
 
 # A pill about the awesome configuration, stored in a git submodule.
+# Note that the submodule will be cloned to the drugstore, and the site should be
+# a link or copy without the .git directory depending on root.mode.
 [[pill]]
 name = "awesome"
 [[pill.drip]]
-root = "~/.config/awesome"
+# You can decide where to put on site and in the repo
+root.site = "~/.config/awesome"
+root.repo = "awesome-yoru"
+root.mode = "link"
 remote = "git@github.com:path/to/awesome_conf.git"
 
 # A pill with same configuration but with different distribution path. The root
@@ -39,14 +44,14 @@ remote = "git@github.com:path/to/awesome_conf.git"
 name = "emacs"
 [[pill.drip]]
 stem = ["init.el"]
+# This outputs { root = "~/.config/emacs/", stem = ["init.el"] } for linux devices...
 [[pill.drip]]
 env = ["linux"]
 root = "~/.config/emacs"
-# This outputs { root = "~/.config/emacs/", stem = ["init.el"] } for linux devices...
+# ...but not mac, which gets { root = "~/.emacs.d/", stem = ["init.el"] }.
 [[pill.drip]]
 env = ["mac"]
 root = "~/.emacs.d"
-# ...but not mac, which gets { root = "~/.emacs.d/", stem = ["init.el"] }.
 
 # A pill with two different configurations on the same software, but share same
 # common files.

@@ -80,22 +80,22 @@ fn main() -> anyhow::Result<()> {
         let pill_task = pill_ob.synthesis(&machine)?;
         println!("{}", pill_task);
 
-        // Prompt::new("proceed? [N/y/!] ").process(|s| {
-        //     match s {
-        //         "y" => {
-        //             println!("executing...");
-        //             pill_task.execution()?;
-        //         }
-        //         "!" => {
-        //             println!("abort!");
-        //             Err(io::Error::new(io::ErrorKind::Other, "abort!"))?;
-        //         }
-        //         _ => {
-        //             println!("skipping...");
-        //         }
-        //     };
-        //     Ok(())
-        // })?;
+        Prompt::new("proceed? [N/y/!] ").process(|s| {
+            match s {
+                "y" => {
+                    println!("executing...");
+                    pill_task.execution()?;
+                }
+                "!" => {
+                    println!("abort!");
+                    Err(io::Error::new(io::ErrorKind::Other, "abort!"))?;
+                }
+                _ => {
+                    println!("skipping...");
+                }
+            };
+            Ok(())
+        })?;
     }
 
     println!();

@@ -106,6 +106,7 @@ The following sections demonstrate the technical details of `underdose`.
 
 ### Roadmap
 
+- [x] Implement probing for easier task manipulation.
 - [ ] Carefully design the task primitives.
 - [ ] Snapshot before sync. Use a table of hashes for snapshot. Use a file-lock for parallel operations.
 - [ ] Undo.
