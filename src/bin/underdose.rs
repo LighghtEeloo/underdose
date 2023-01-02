@@ -6,7 +6,7 @@ use git2::Repository;
 use std::io;
 use underdose::{
     cli::Cli,
-    dynamics::{AtomArrow, Execution, PillTask, Synthesis},
+    dynamics::{AtomArrow, Execution, PillTask, Probing, Synthesis},
     utils::{repo::Dirt, Conf, Prompt, DRUGSTORE_TOML, UNDERDOSE_TOML},
     Drugstore, Machine,
 };
@@ -75,25 +75,27 @@ fn main() -> anyhow::Result<()> {
 
     // synthesize and execute tasks
     for (_, pill) in &store.pills {
-        let drip_task = pill.synthesis(&machine, AtomArrow::RepoToSite)?;
-        println!("{}", drip_task);
+        let pill_ob = pill.probing(&machine, AtomArrow::RepoToSite)?;
+        println!("{}", pill_ob);
+        let pill_task = pill_ob.synthesis(&machine)?;
+        println!("{}", pill_task);
 
-        Prompt::new("proceed? [N/y/!] ").process(|s| {
-            match s {
-                "y" => {
-                    println!("executing...");
-                    drip_task.execution()?;
-                }
-                "!" => {
-                    println!("abort!");
-                    Err(io::Error::new(io::ErrorKind::Other, "abort!"))?;
-                }
-                _ => {
-                    println!("skipping...");
-                }
-            };
-            Ok(())
-        })?;
+        // Prompt::new("proceed? [N/y/!] ").process(|s| {
+        //     match s {
+        //         "y" => {
+        //             println!("executing...");
+        //             pill_task.execution()?;
+        //         }
+        //         "!" => {
+        //             println!("abort!");
+        //             Err(io::Error::new(io::ErrorKind::Other, "abort!"))?;
+        //         }
+        //         _ => {
+        //             println!("skipping...");
+        //         }
+        //     };
+        //     Ok(())
+        // })?;
     }
 
     println!();

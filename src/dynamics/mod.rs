@@ -1,11 +1,12 @@
 mod execution;
-pub mod observation;
+mod observation;
 mod probing;
 mod synthesis;
-pub mod task;
+mod task;
 
 use crate::Machine;
 
+pub use observation::{AtomOb, PillOb, PillObInner};
 pub use task::{AtomTask, PillTask, PillTaskInner};
 
 #[derive(Clone, Copy)]
@@ -24,9 +25,7 @@ pub trait Probing {
 
 pub trait Synthesis {
     type Task;
-    fn synthesis(
-        &self, machine: &Machine, arrow: AtomArrow,
-    ) -> anyhow::Result<Self::Task>;
+    fn synthesis(&self, machine: &Machine) -> anyhow::Result<Self::Task>;
 }
 
 pub trait Execution {
