@@ -30,13 +30,24 @@ pub enum Commands {
     /// Shows all path information available
     Where,
     /// Drain the machine to the drugstore
-    Drain,
+    Drain {
+        /// The name of the drugstore repo
+        #[arg(short, long, value_name = "NAME")]
+        store: Option<String>,
+    },
     /// Drain the machine to the drugstore, and pour on condition
-    Sync,
+    Sync {
+        /// The name of the drugstore repo
+        #[arg(short, long, value_name = "NAME")]
+        store: Option<String>,
+    },
     /// Pour the drugstore to the machine
     Pour {
         #[arg(short, long)]
         force: bool,
+        /// The name of the drugstore repo
+        #[arg(short, long, value_name = "NAME")]
+        store: Option<String>,
     },
 }
 
@@ -45,23 +56,41 @@ impl Cli {
         Self::parse()
     }
     pub fn main(self) -> anyhow::Result<()> {
-        let underdose_dirs = ProjectDirs::from("", "LitiaEeloo", "Underdose")
+        let default_dirs = ProjectDirs::from("", "LitiaEeloo", "Underdose")
             .expect("No valid config directory fomulated");
+        let current_dir = std::env::current_dir()?;
 
         match self.command {
             Commands::Init { name } => {
                 // read underdose_conf into machine
+                // the priority of config file is:
+                // 1. --config
+                // 2. current_dir.join(".underdose/").join("{--name}.toml")
+                // 3. underdose_dirs.config_dir().join(underdose_conf_name)
                 let underdose_conf_name = "Underdose.toml";
-                let underdose_conf = UnderdoseConf::new(name).conf(
+                let underdose_conf_path = {
                     self.config.unwrap_or_else(|| {
-                        underdose_dirs.config_dir().join(underdose_conf_name)
-                    }),
-                );
+                        let underdose_repo_conf_path = current_dir
+                            .join(".underdose")
+                            .join(format!("{}.toml", name));
+                        if underdose_repo_conf_path.exists() {
+                            underdose_repo_conf_path
+                        } else {
+                            default_dirs.config_dir().join(underdose_conf_name)
+                        }
+                    })
+                };
+                let underdose_conf =
+                    UnderdoseConf::new(name).conf(underdose_conf_path);
                 log::info!(
-                    "\nreading underdose_conf: {}",
+                    "\nediting underdose_conf: {}",
                     underdose_conf.path.display()
                 );
-                underdose_conf.ensure_force()?;
+                underdose_conf.ensure_exist()?;
+
+                // edit underdose_conf
+                underdose_conf.edit()?;
+
                 let machine_buf = underdose_conf.read()?;
                 let machine: Machine = machine_buf.as_str().try_into()?;
                 log::debug!("\n{:#?}", machine);
@@ -78,9 +107,9 @@ impl Cli {
             }
             Commands::Config => todo!(),
             Commands::Where => todo!(),
-            Commands::Drain => todo!(),
-            Commands::Sync => todo!(),
-            Commands::Pour { force } => todo!(),
+            Commands::Drain { store } => todo!(),
+            Commands::Sync { store } => todo!(),
+            Commands::Pour { force, store } => todo!(),
         }
 
         Ok(())

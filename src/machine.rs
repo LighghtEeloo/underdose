@@ -9,13 +9,12 @@ pub struct Machine {
     pub env: HashSet<String>,
     pub repo: PathBuf,
     pub sync: AtomMode,
-    pub undo: usize,
+    pub cache: Option<PathBuf>,
+    pub undo: Option<usize>,
     pub ignore: IgnoreSetBuilder,
     pub overdose: bool,
     pub submodule: bool,
     pub symlink: bool,
-    pub cleanup_site: bool,
-    pub cleanup_repo: bool,
 }
 
 mod parse {
@@ -29,7 +28,6 @@ mod parse {
         pub repo: PathBuf,
         pub defaults: Defaults,
         pub features: Features,
-        pub cleanup: Cleanup,
         pub tutorial: Option<()>,
     }
 
@@ -37,7 +35,8 @@ mod parse {
     #[serde(deny_unknown_fields)]
     pub struct Defaults {
         pub sync: AtomMode,
-        pub undo: usize,
+        pub cache: Option<PathBuf>,
+        pub undo: Option<usize>,
         pub ignore: Vec<String>,
     }
 
@@ -47,19 +46,6 @@ mod parse {
         pub overdose: bool,
         pub submodule: bool,
         pub symlink: bool,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    #[serde(deny_unknown_fields)]
-    pub struct Cleanup {
-        pub empty_dir: CleanupEmptyDir,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    #[serde(deny_unknown_fields)]
-    pub struct CleanupEmptyDir {
-        pub site: bool,
-        pub repo: bool,
     }
 }
 
@@ -80,20 +66,18 @@ impl TryFrom<parse::Machine> for Machine {
             name,
             env,
             repo,
-            defaults: parse::Defaults { sync, undo, ignore },
+            defaults:
+                parse::Defaults {
+                    sync,
+                    cache,
+                    undo,
+                    ignore,
+                },
             features:
                 parse::Features {
                     overdose,
                     submodule,
                     symlink,
-                },
-            cleanup:
-                parse::Cleanup {
-                    empty_dir:
-                        parse::CleanupEmptyDir {
-                            site: cleanup_site,
-                            repo: cleanup_repo,
-                        },
                 },
             tutorial,
         }: parse::Machine,
@@ -107,13 +91,12 @@ impl TryFrom<parse::Machine> for Machine {
             env,
             repo: utils::expand_path(&repo)?,
             sync,
+            cache,
             undo,
             ignore: IgnoreSetBuilder::new().chain(ignore.iter()),
             overdose,
             submodule,
             symlink,
-            cleanup_site,
-            cleanup_repo,
         })
     }
 }

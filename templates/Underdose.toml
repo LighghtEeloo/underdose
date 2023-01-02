@@ -1,11 +1,13 @@
 # DO NOT DELETE ANY OPTION because it's better to keep things obvious.
 
-# (unimportant) unique name only for building dir
-name = "archan"
 # see `DrugStore.toml` for a full example of `env`
 env = ["arch"]
-# path to the local drugstore repo
-repo = "path/to/your/local/drugstore/repo"
+
+# path to the local drugstore repos
+[repo]
+# (unimportant) unique name only for building dir
+# The first entry is the default repo
+#archan = "path/to/your/local/drugstore/repo"
 
 
 [defaults]
@@ -13,8 +15,11 @@ repo = "path/to/your/local/drugstore/repo"
 # sync <: "link" | "copy"
 sync = "link"
 
-# recent versions to keep
-undo = 100
+# path to cache dir; remove entry to use the default
+#cache = "path/to/your/cache/dir"
+
+# recent pill-wise versions to keep; remove entry for unlimited
+#undo = 100
 
 # global ignore
 ignore = ["**/.git"]

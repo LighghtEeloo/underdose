@@ -49,6 +49,17 @@ impl Conf {
         file.read_to_string(&mut buf)?;
         Ok(buf)
     }
+
+    pub fn edit(&self) -> anyhow::Result<()> {
+        let editor =
+            std::env::var("EDITOR").unwrap_or_else(|_| "vim".to_string());
+        let status = std::process::Command::new(editor)
+            .arg(&self.path)
+            .status()
+            .expect("failed to execute process");
+        assert!(status.success());
+        Ok(())
+    }
 }
 
 #[derive(Debug)]
