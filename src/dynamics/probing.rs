@@ -1,4 +1,4 @@
-use crate::dynamics::{AtomArrow, Probing, PillOb, PillObInner, AtomOb};
+use crate::dynamics::{AtomArrow, AtomOb, PillOb, PillObInner, Probing};
 use crate::store::{Atom, AtomMode, DripInner, Pill};
 use crate::utils::{self, IgnoreSet};
 use crate::{machine, Machine};
@@ -39,7 +39,7 @@ impl Probing for Pill {
                             machine,
                             arrow,
                         }
-                        .resolve_atoms(stem)?,
+                        .resolve(stem)?,
                     }
                 }
                 None => Err(anyhow::anyhow!("no variant set"))?,
@@ -58,7 +58,7 @@ struct AddictedDrip<'a> {
 
 impl<'a> AddictedDrip<'a> {
     /// Resolve stem atoms to absolute file paths; requires a direction
-    fn resolve_atoms(self, stem: &Vec<Atom>) -> anyhow::Result<Vec<AtomOb>> {
+    fn resolve(self, stem: &Vec<Atom>) -> anyhow::Result<Vec<AtomOb>> {
         log::trace!(
             "\nresolving site: [{}]\n       && repo: [{}]",
             self.root.site.display(),
@@ -82,19 +82,19 @@ impl<'a> AddictedDrip<'a> {
                     let atom = &self
                         .atom_append(atom)
                         .probing(self.machine, self.arrow)?;
-                    self.atoms_copy(&mut atoms, &atom.src, &atom.dst)?
+                    self.resolve_atom(&mut atoms, &atom.src, &atom.dst)?
                 }
             }
         }
         Ok(atoms)
     }
-    fn atoms_copy(
+    fn resolve_atom(
         self, atoms: &mut Vec<AtomOb>, src: &(PathBuf, bool),
         dst: &(PathBuf, bool),
     ) -> anyhow::Result<()> {
         let src_p = &src.0;
         if self.ignore_set.is_ignored(src_p) {
-            log::debug!("ignoring {}", src_p.display())
+            log::debug!("ignoring path [{}]", src_p.display())
         } else if src_p.is_file() {
             atoms.push(AtomOb {
                 src: src.to_owned(),
@@ -118,10 +118,10 @@ impl<'a> AddictedDrip<'a> {
                     Ok((p, exists))
                 };
 
-                self.atoms_copy(atoms, &peek(src_path)?, &peek(dst_path)?)?;
+                self.resolve_atom(atoms, &peek(src_path)?, &peek(dst_path)?)?;
             }
         } else {
-            log::warn!("unsupported file detected: {}", src_p.display())
+            log::warn!("unsupported file type detected at path [{}]", src_p.display())
         }
         Ok(())
     }

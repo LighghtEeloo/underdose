@@ -13,20 +13,22 @@ impl Synthesis for PillOb {
     type Task = PillTask;
 
     fn synthesis(&self, machine: &Machine) -> anyhow::Result<Self::Task> {
+        let root = self.root.synthesis(machine)?;
+        let inner = match &self.inner {
+            PillObInner::GitModule { remote } => PillTaskInner::GitModule {
+                remote: remote.to_owned(),
+            },
+            PillObInner::Addicted { atoms } => PillTaskInner::Addicted {
+                atoms: atoms
+                    .iter()
+                    .map(|atom| atom.synthesis(machine))
+                    .collect::<anyhow::Result<Vec<_>>>()?,
+            },
+        };
         Ok(PillTask {
             name: self.name.to_owned(),
-            root: self.root.synthesis(machine)?,
-            inner: match &self.inner {
-                PillObInner::GitModule { remote } => PillTaskInner::GitModule {
-                    remote: remote.to_owned(),
-                },
-                PillObInner::Addicted { atoms } => PillTaskInner::Addicted {
-                    atoms: atoms
-                        .iter()
-                        .map(|atom| atom.synthesis(machine))
-                        .collect::<anyhow::Result<Vec<_>>>()?,
-                },
-            },
+            root,
+            inner,
         })
     }
 }
