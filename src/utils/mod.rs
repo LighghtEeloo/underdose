@@ -24,7 +24,6 @@ pub struct Conf {
 
 impl Conf {
     pub fn ensure_exist(&self) -> anyhow::Result<&Self> {
-        // self.path = canonicalize_parent(&self.path)?;
         if !self.path.exists() {
             std::fs::create_dir_all(
                 self.path.parent().expect("config path should have parent"),
@@ -34,7 +33,6 @@ impl Conf {
         Ok(self)
     }
     pub fn ensure_force(&self) -> anyhow::Result<&Self> {
-        // self.path = canonicalize_parent(&self.path)?;
         if !self.path.exists() {
             std::fs::create_dir_all(
                 self.path.parent().expect("config path should have parent"),
@@ -51,13 +49,15 @@ impl Conf {
     }
 
     pub fn edit(&self) -> anyhow::Result<()> {
-        let editor =
-            std::env::var("EDITOR").unwrap_or_else(|_| "vim".to_string());
+        let editor = std::env::var("EDITOR")
+            .map_err(|_| anyhow::anyhow!("$EDITOR envvar not set"))?;
         let status = std::process::Command::new(editor)
             .arg(&self.path)
             .status()
-            .expect("failed to execute process");
-        assert!(status.success());
+            .map_err(|_| anyhow::anyhow!("failed to execute process"))?;
+        if !status.success() {
+            Err(anyhow::anyhow!("failed to edit config file"))?;
+        }
         Ok(())
     }
 }
