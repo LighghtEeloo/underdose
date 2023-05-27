@@ -1,0 +1,223 @@
+#compdef underdose
+
+autoload -U is-at-least
+
+_underdose() {
+    typeset -A opt_args
+    typeset -a _arguments_options
+    local ret=1
+
+    if is-at-least 5.2; then
+        _arguments_options=(-s -S -C)
+    else
+        _arguments_options=(-s -C)
+    fi
+
+    local context curcontext="$curcontext" state line
+    _arguments "${_arguments_options[@]}" \
+'-c+[Use a custom config file]:PATH:_files' \
+'--config=[Use a custom config file]:PATH:_files' \
+'-h[Print help]' \
+'--help[Print help]' \
+'-V[Print version]' \
+'--version[Print version]' \
+":: :_underdose_commands" \
+"*::: :->underdose" \
+&& ret=0
+    case $state in
+    (underdose)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:underdose-command-$line[1]:"
+        case $line[1] in
+            (init)
+_arguments "${_arguments_options[@]}" \
+'-h[Print help]' \
+'--help[Print help]' \
+':name -- Set the name of the machine:' \
+&& ret=0
+;;
+(config)
+_arguments "${_arguments_options[@]}" \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(where)
+_arguments "${_arguments_options[@]}" \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(drain)
+_arguments "${_arguments_options[@]}" \
+'-s+[The name of the drugstore repo]:NAME: ' \
+'--store=[The name of the drugstore repo]:NAME: ' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(sync)
+_arguments "${_arguments_options[@]}" \
+'-s+[The name of the drugstore repo]:NAME: ' \
+'--store=[The name of the drugstore repo]:NAME: ' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(pour)
+_arguments "${_arguments_options[@]}" \
+'-s+[The name of the drugstore repo]:NAME: ' \
+'--store=[The name of the drugstore repo]:NAME: ' \
+'-f[]' \
+'--force[]' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" \
+":: :_underdose__help_commands" \
+"*::: :->help" \
+&& ret=0
+
+    case $state in
+    (help)
+        words=($line[1] "${words[@]}")
+        (( CURRENT += 1 ))
+        curcontext="${curcontext%:*:*}:underdose-help-command-$line[1]:"
+        case $line[1] in
+            (init)
+_arguments "${_arguments_options[@]}" \
+&& ret=0
+;;
+(config)
+_arguments "${_arguments_options[@]}" \
+&& ret=0
+;;
+(where)
+_arguments "${_arguments_options[@]}" \
+&& ret=0
+;;
+(drain)
+_arguments "${_arguments_options[@]}" \
+&& ret=0
+;;
+(sync)
+_arguments "${_arguments_options[@]}" \
+&& ret=0
+;;
+(pour)
+_arguments "${_arguments_options[@]}" \
+&& ret=0
+;;
+(help)
+_arguments "${_arguments_options[@]}" \
+&& ret=0
+;;
+        esac
+    ;;
+esac
+;;
+        esac
+    ;;
+esac
+}
+
+(( $+functions[_underdose_commands] )) ||
+_underdose_commands() {
+    local commands; commands=(
+'init:Initialize on a new machine, working from drugstore repo' \
+'config:Configure the machine' \
+'where:Shows all path information available' \
+'drain:Drain the machine to the drugstore' \
+'sync:Drain the machine to the drugstore, and pour on condition' \
+'pour:Pour the drugstore to the machine' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'underdose commands' commands "$@"
+}
+(( $+functions[_underdose__config_commands] )) ||
+_underdose__config_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose config commands' commands "$@"
+}
+(( $+functions[_underdose__help__config_commands] )) ||
+_underdose__help__config_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose help config commands' commands "$@"
+}
+(( $+functions[_underdose__drain_commands] )) ||
+_underdose__drain_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose drain commands' commands "$@"
+}
+(( $+functions[_underdose__help__drain_commands] )) ||
+_underdose__help__drain_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose help drain commands' commands "$@"
+}
+(( $+functions[_underdose__help_commands] )) ||
+_underdose__help_commands() {
+    local commands; commands=(
+'init:Initialize on a new machine, working from drugstore repo' \
+'config:Configure the machine' \
+'where:Shows all path information available' \
+'drain:Drain the machine to the drugstore' \
+'sync:Drain the machine to the drugstore, and pour on condition' \
+'pour:Pour the drugstore to the machine' \
+'help:Print this message or the help of the given subcommand(s)' \
+    )
+    _describe -t commands 'underdose help commands' commands "$@"
+}
+(( $+functions[_underdose__help__help_commands] )) ||
+_underdose__help__help_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose help help commands' commands "$@"
+}
+(( $+functions[_underdose__help__init_commands] )) ||
+_underdose__help__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose help init commands' commands "$@"
+}
+(( $+functions[_underdose__init_commands] )) ||
+_underdose__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose init commands' commands "$@"
+}
+(( $+functions[_underdose__help__pour_commands] )) ||
+_underdose__help__pour_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose help pour commands' commands "$@"
+}
+(( $+functions[_underdose__pour_commands] )) ||
+_underdose__pour_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose pour commands' commands "$@"
+}
+(( $+functions[_underdose__help__sync_commands] )) ||
+_underdose__help__sync_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose help sync commands' commands "$@"
+}
+(( $+functions[_underdose__sync_commands] )) ||
+_underdose__sync_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose sync commands' commands "$@"
+}
+(( $+functions[_underdose__help__where_commands] )) ||
+_underdose__help__where_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose help where commands' commands "$@"
+}
+(( $+functions[_underdose__where_commands] )) ||
+_underdose__where_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose where commands' commands "$@"
+}
+
+if [ "$funcstack[1]" = "_underdose" ]; then
+    _underdose "$@"
+else
+    compdef _underdose underdose
+fi
