@@ -63,3 +63,7 @@ git-url-parse = "0.4"
 # data structures
 indexmap = { version = "1.9" , features = ["serde"] }
 # phf = { version = "0.11", features = ["macros"] }
+
+[build-dependencies]
+clap = { version = "4.0", features = ["derive"] }
+clap_complete = "4"
