@@ -11,7 +11,7 @@ This artifact is still under construction. The declared features have not been f
 Three assertions for our potential users:
 
 - Produce dotfiles from day to day and want to backup them up or synchronize them between machines.
-- Consider a centralized git repository as a feasible way to manage dotfiles.
+- Consider a centralized git repository as a feasible way of managing dotfiles.
 - Can do git, and expect the toolchain to be simple and surprise-free.
 
 I hope `underdose` can be a powerful candidate as a tool that meets the said demands.

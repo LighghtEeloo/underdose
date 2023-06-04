@@ -7,7 +7,10 @@ use std::io;
 use underdose::{
     cli::Cli,
     dynamics::{AtomArrow, Execution, PillTask, Probing, Synthesis},
-    utils::{repo::Dirt, Conf, Prompt, DRUGSTORE_TOML, UNDERDOSE_TOML},
+    utils::{
+        conf::{Conf, Prompt, DRUGSTORE_TOML, UNDERDOSE_TOML},
+        repo::Dirt,
+    },
     Drugstore, Machine,
 };
 

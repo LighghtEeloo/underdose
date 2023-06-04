@@ -1,7 +1,10 @@
 use super::interface::{Cli, Commands};
 use crate::{
     dynamics::{AtomArrow, Execution, PillTask, Synthesis},
-    utils::{repo::Dirt, Conf, Prompt, UnderdoseConf},
+    utils::{
+        conf::{Conf, Prompt, UnderdoseConf},
+        repo::Dirt,
+    },
     Drugstore, Machine,
 };
 use clap::{Parser, Subcommand};

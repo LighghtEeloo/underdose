@@ -1,4 +1,4 @@
-use crate::utils::IgnoreSetBuilder;
+use crate::utils::conf::IgnoreSetBuilder;
 use crate::{store::AtomMode, utils};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, path::PathBuf};
@@ -89,7 +89,7 @@ impl TryFrom<parse::Machine> for Machine {
         Ok(Self {
             name,
             env,
-            repo: utils::expand_path(&repo)?,
+            repo: utils::conf::expand_path(&repo)?,
             sync,
             cache,
             undo,

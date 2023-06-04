@@ -5,7 +5,7 @@ use crate::{
         AtomArrow, AtomOb, AtomTask, PillOb, PillObInner, PillTask,
         PillTaskInner, RepoToSite, SiteToRepo, Synthesis,
     },
-    utils::{self, IgnoreSet},
+    utils::{self, conf::IgnoreSet},
 };
 use std::path::Path;
 

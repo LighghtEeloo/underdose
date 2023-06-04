@@ -1,6 +1,6 @@
 use super::*;
 use crate::store::AtomMode;
-use crate::{dynamics::Execution, utils::Prompt};
+use crate::{dynamics::Execution, utils::conf::Prompt};
 use std::{fs, io};
 
 impl Execution for PillTask {

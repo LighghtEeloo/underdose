@@ -1,5 +1,3 @@
-pub mod repo;
-
 use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
 use std::{
     io::{self, Read, Write},

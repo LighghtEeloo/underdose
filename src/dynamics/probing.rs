@@ -1,6 +1,6 @@
 use crate::dynamics::{AtomArrow, AtomOb, PillOb, PillObInner, Probing};
 use crate::store::{Atom, AtomMode, DripInner, Pill};
-use crate::utils::{self, IgnoreSet};
+use crate::utils::{self, conf::IgnoreSet};
 use crate::{machine, Machine};
 use git_url_parse::GitUrl;
 use std::path::{Path, PathBuf};
@@ -111,9 +111,9 @@ impl<'a> AddictedDrip<'a> {
                 let peek = |p: PathBuf| -> anyhow::Result<_> {
                     let exists = p.exists();
                     let p = if exists {
-                        utils::canonicalize_path(p)?
+                        utils::conf::canonicalize_path(p)?
                     } else {
-                        utils::trim_path(p)?
+                        utils::conf::trim_path(p)?
                     };
                     Ok((p, exists))
                 };
@@ -121,7 +121,10 @@ impl<'a> AddictedDrip<'a> {
                 self.resolve_atom(atoms, &peek(src_path)?, &peek(dst_path)?)?;
             }
         } else {
-            log::warn!("unsupported file type detected at path [{}]", src_p.display())
+            log::warn!(
+                "unsupported file type detected at path [{}]",
+                src_p.display()
+            )
         }
         Ok(())
     }
@@ -159,9 +162,9 @@ impl Probing for Atom {
         let peek = |p: PathBuf| -> anyhow::Result<_> {
             let exists = p.exists();
             let p = if exists {
-                utils::canonicalize_path(p)?
+                utils::conf::canonicalize_path(p)?
             } else {
-                utils::trim_path(p)?
+                utils::conf::trim_path(p)?
             };
             Ok((p, exists))
         };

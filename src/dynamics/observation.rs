@@ -1,6 +1,6 @@
 use crate::dynamics::{AtomArrow, Probing};
 use crate::store::{Atom, AtomMode, DripInner, Pill};
-use crate::utils::{self, IgnoreSet};
+use crate::utils::{self, conf::IgnoreSet};
 use crate::{machine, Machine};
 use colored::Colorize;
 use git_url_parse::GitUrl;
