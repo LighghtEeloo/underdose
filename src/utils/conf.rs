@@ -1,5 +1,6 @@
 use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
 use std::{
+    fmt::{self, Debug},
     io::{self, Read, Write},
     path::{Path, PathBuf},
 };
@@ -30,7 +31,7 @@ impl Conf {
         }
         Ok(self)
     }
-    pub fn ensure_force(&self) -> anyhow::Result<&Self> {
+    pub fn ensure_template_forced(&self) -> anyhow::Result<&Self> {
         if !self.path.exists() {
             std::fs::create_dir_all(
                 self.path.parent().expect("config path should have parent"),
@@ -69,7 +70,7 @@ impl UnderdoseConf {
     pub fn new(name: String) -> Self {
         let toml = UNDERDOSE_TOML;
         let mut template = toml.parse::<Document>().expect("invalid doc");
-        template["name"] = toml_edit::value(name);
+        template["repo"]["name"] = toml_edit::value(name);
         Self { template }
     }
     pub fn conf(self, path: PathBuf) -> Conf {
@@ -92,51 +93,14 @@ pub fn passed_tutorial(toml: &toml::Value) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn ensured_dir<P: AsRef<Path>>(dir_path: P) -> anyhow::Result<PathBuf> {
-    let dir_path = dir_path.as_ref().to_path_buf();
-    if !dir_path.exists() {
-        std::fs::create_dir_all(&dir_path)?;
-    }
-    Ok(dir_path)
-}
-
-pub fn expand_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
-    Ok(PathBuf::from(shellexpand::path::tilde(path.as_ref())))
-}
-
-pub fn canonicalize_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
-    let path = expand_path(path)?;
-    let parent = path.parent().ok_or_else(|| {
-        anyhow::anyhow!("path <{}> should have parent", path.display())
-    })?;
-    let file_name = path.file_name().ok_or_else(|| {
-        anyhow::anyhow!("path <{}> should have file name", path.display())
-    })?;
-    let parent = parent.canonicalize()?;
-    Ok(parent.join(file_name))
-}
-
-pub fn trim_path<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
-    let par = path.as_ref().parent().ok_or_else(|| {
-        anyhow::anyhow!("path <{}> should have parent", path.as_ref().display())
-    })?;
-    let file_name = path.as_ref().file_name().ok_or_else(|| {
-        anyhow::anyhow!(
-            "path <{}> should have file name",
-            path.as_ref().display()
-        )
-    })?;
-    let file_name = file_name
-        .to_str()
-        .ok_or_else(|| anyhow::anyhow!("file name should be valid utf-8"))?;
-    let file_name = file_name.trim_end_matches('/');
-    let res = par.join(file_name);
-    Ok(res)
-}
-
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct IgnoreSetBuilder {
     globs: GlobSetBuilder,
+}
+impl Debug for IgnoreSetBuilder {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("IgnoreSetBuilder(..)")
+    }
 }
 
 impl IgnoreSetBuilder {

@@ -42,17 +42,17 @@ fn main() -> anyhow::Result<()> {
     Conf {
         template: machine_buf,
         path: machine
-            .repo
+            .local
             .join(".underdose")
             .join(&format!("{}.toml", machine.name)),
     }
-    .ensure_force()?;
+    .ensure_template_forced()?;
 
     // read drugstore_conf into store
     let drugstore_conf_name = "Drugstore.toml";
     let drugstore_conf = Conf {
         template: DRUGSTORE_TOML.to_owned(),
-        path: machine.repo.join(drugstore_conf_name),
+        path: machine.local.join(drugstore_conf_name),
     };
     log::info!(
         "\nreading drugstore_conf: {}",
@@ -62,8 +62,8 @@ fn main() -> anyhow::Result<()> {
     let store: Drugstore = (store_buf.as_ref(), &machine).try_into()?;
     log::debug!("\n{:#?}", store);
 
-    // open drugstore repo
-    let repo = Repository::open(&machine.repo).expect("failed to open repo");
+    // open local drugstore repo
+    let repo = Repository::open(&machine.local).expect("failed to open repo");
 
     // check if worktree is clean
     let statuses = repo.statuses(None)?;
@@ -75,6 +75,8 @@ fn main() -> anyhow::Result<()> {
         }
         return Ok(());
     }
+
+    std::process::exit(0);
 
     // synthesize and execute tasks
     for (_, pill) in &store.pills {

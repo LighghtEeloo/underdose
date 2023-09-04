@@ -13,6 +13,7 @@ pub mod store;
 pub mod utils {
     pub mod conf;
     pub mod repo;
+    pub mod path;
 }
 
 pub use machine::Machine;

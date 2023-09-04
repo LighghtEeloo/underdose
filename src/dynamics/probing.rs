@@ -111,9 +111,9 @@ impl<'a> AddictedDrip<'a> {
                 let peek = |p: PathBuf| -> anyhow::Result<_> {
                     let exists = p.exists();
                     let p = if exists {
-                        utils::conf::canonicalize_path(p)?
+                        utils::path::canonicalize(p)?
                     } else {
-                        utils::conf::trim_path(p)?
+                        utils::path::trim(p)?
                     };
                     Ok((p, exists))
                 };
@@ -162,9 +162,9 @@ impl Probing for Atom {
         let peek = |p: PathBuf| -> anyhow::Result<_> {
             let exists = p.exists();
             let p = if exists {
-                utils::conf::canonicalize_path(p)?
+                utils::path::canonicalize(p)?
             } else {
-                utils::conf::trim_path(p)?
+                utils::path::trim(p)?
             };
             Ok((p, exists))
         };

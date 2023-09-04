@@ -5,14 +5,14 @@ env = ["arch"]
 
 # path to the local drugstore repos
 [repo]
-# (unimportant) unique name only for building dir
-# The first entry is the default repo
-#archan = "path/to/your/local/drugstore/repo"
-
+name = "archan"
+#remote = "git@your-git-server:your-user/your-repo"
+#branch = "main"
+#local = "path/to/your/local/drugstore/repo"
 
 [defaults]
 
-# sync <: "link" | "copy"
+# sync :> "link" | "copy"
 sync = "link"
 
 # path to cache dir; remove entry to use the default
@@ -33,12 +33,8 @@ overdose = true
 # git repo to the drugstore if not present
 submodule = true
 
-# sync local symlinks in settings (not implemented)
+# sync local symlinks in settings
 symlink = false
-
-[cleanup.empty_dir]
-site = false
-repo = false
 
 
 # After carefully editing the rest of the file, remove this line and below to

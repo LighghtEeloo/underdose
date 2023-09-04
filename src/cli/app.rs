@@ -59,11 +59,11 @@ impl Cli {
                 Conf {
                     template: machine_buf,
                     path: machine
-                        .repo
+                        .local
                         .join(".underdose")
                         .join(&format!("{}.toml", machine.name)),
                 }
-                .ensure_force()?;
+                .ensure_template_forced()?;
             }
             Commands::Config => todo!(),
             Commands::Where => todo!(),

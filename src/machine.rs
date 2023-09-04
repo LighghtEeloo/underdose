@@ -7,7 +7,9 @@ use std::{collections::HashSet, path::PathBuf};
 pub struct Machine {
     pub name: String,
     pub env: HashSet<String>,
-    pub repo: PathBuf,
+    pub remote: String,
+    pub branch: String,
+    pub local: PathBuf,
     pub sync: AtomMode,
     pub cache: Option<PathBuf>,
     pub undo: Option<usize>,
@@ -23,12 +25,20 @@ mod parse {
     #[derive(Serialize, Deserialize, Debug)]
     #[serde(deny_unknown_fields)]
     pub struct Machine {
-        pub name: String,
         pub env: HashSet<String>,
-        pub repo: PathBuf,
+        pub repo: Repo,
         pub defaults: Defaults,
         pub features: Features,
         pub tutorial: Option<()>,
+    }
+
+    #[derive(Serialize, Deserialize, Debug, Clone)]
+    #[serde(deny_unknown_fields)]
+    pub struct Repo {
+        pub name: String,
+        pub remote: String,
+        pub branch: String,
+        pub local: PathBuf,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -63,9 +73,14 @@ impl TryFrom<parse::Machine> for Machine {
 
     fn try_from(
         parse::Machine {
-            name,
             env,
-            repo,
+            repo:
+                parse::Repo {
+                    name,
+                    remote,
+                    branch,
+                    local,
+                },
             defaults:
                 parse::Defaults {
                     sync,
@@ -89,7 +104,9 @@ impl TryFrom<parse::Machine> for Machine {
         Ok(Self {
             name,
             env,
-            repo: utils::conf::expand_path(&repo)?,
+            remote,
+            branch,
+            local: utils::path::expand_home(&local)?,
             sync,
             cache,
             undo,

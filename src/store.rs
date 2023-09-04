@@ -315,14 +315,14 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
         let root = if let Some(root) = drip.root {
             let quasi: QuasiAtom = root.try_into()?;
             Some(Atom {
-                site: utils::conf::expand_path(
+                site: utils::path::expand_home(
                     quasi
                         .site
                         .ok_or_else(|| anyhow::anyhow!("no site found"))?,
                 )?,
-                repo: utils::conf::expand_path(
+                repo: utils::path::expand_home(
                     machine
-                        .repo
+                        .local
                         .join(quasi.repo.unwrap_or_else(|| name.into())),
                 )?,
                 mode: quasi.mode.unwrap_or(machine.sync),
