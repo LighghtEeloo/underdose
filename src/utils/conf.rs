@@ -17,7 +17,7 @@ pub const DRUGSTORE_TOML: &str = include_str!(concat!(
 
 #[derive(Debug)]
 pub struct Conf {
-    pub template: String,
+    pub buffer: String,
     pub path: PathBuf,
 }
 
@@ -27,17 +27,17 @@ impl Conf {
             std::fs::create_dir_all(
                 self.path.parent().expect("config path should have parent"),
             )?;
-            std::fs::write(&self.path, &self.template)?;
+            std::fs::write(&self.path, &self.buffer)?;
         }
         Ok(self)
     }
-    pub fn ensure_template_forced(&self) -> anyhow::Result<&Self> {
+    pub fn ensure_forced(&self) -> anyhow::Result<&Self> {
         if !self.path.exists() {
             std::fs::create_dir_all(
                 self.path.parent().expect("config path should have parent"),
             )?;
         }
-        std::fs::write(&self.path, &self.template)?;
+        std::fs::write(&self.path, &self.buffer)?;
         Ok(self)
     }
     pub fn read(&self) -> anyhow::Result<String> {
@@ -73,9 +73,10 @@ impl UnderdoseConf {
         template["repo"]["name"] = toml_edit::value(name);
         Self { template }
     }
+    /// convert to Conf whose buffer is well formatted
     pub fn conf(self, path: PathBuf) -> Conf {
         Conf {
-            template: self.template.to_string(),
+            buffer: self.template.to_string(),
             path,
         }
     }

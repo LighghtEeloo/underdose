@@ -25,7 +25,8 @@ fn main() -> anyhow::Result<()> {
     // read underdose_conf into machine
     let underdose_conf_name = "Underdose.toml";
     let underdose_conf = Conf {
-        template: UNDERDOSE_TOML.to_owned(),
+        buffer: UNDERDOSE_TOML.to_owned(),
+        // either from cli or from default
         path: cli.config.unwrap_or_else(|| {
             underdose_dirs.config_dir().join(underdose_conf_name)
         }),
@@ -40,18 +41,18 @@ fn main() -> anyhow::Result<()> {
 
     // write local conf to drugstore/.underdose/<name>.toml
     Conf {
-        template: machine_buf,
+        buffer: machine_buf,
         path: machine
             .local
             .join(".underdose")
             .join(&format!("{}.toml", machine.name)),
     }
-    .ensure_template_forced()?;
+    .ensure_forced()?;
 
     // read drugstore_conf into store
     let drugstore_conf_name = "Drugstore.toml";
     let drugstore_conf = Conf {
-        template: DRUGSTORE_TOML.to_owned(),
+        buffer: DRUGSTORE_TOML.to_owned(),
         path: machine.local.join(drugstore_conf_name),
     };
     log::info!(

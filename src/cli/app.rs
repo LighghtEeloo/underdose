@@ -20,7 +20,8 @@ impl Cli {
             .expect("No valid config directory fomulated");
         let current_dir = std::env::current_dir()?;
 
-        match self.command {
+        // step 1: read underdose_conf into machine
+        let machine_buf = match self.command {
             Commands::Init { name } => {
                 // read underdose_conf into machine
                 // the priority of config file is:
@@ -51,25 +52,29 @@ impl Cli {
                 // edit underdose_conf
                 underdose_conf.edit()?;
 
-                let machine_buf = underdose_conf.read()?;
-                let machine: Machine = machine_buf.as_str().try_into()?;
-                log::debug!("\n{:#?}", machine);
-
-                // write local conf to drugstore/.underdose/<name>.toml
-                Conf {
-                    template: machine_buf,
-                    path: machine
-                        .local
-                        .join(".underdose")
-                        .join(&format!("{}.toml", machine.name)),
-                }
-                .ensure_template_forced()?;
+                underdose_conf.read()?
             }
             Commands::Config => todo!(),
             Commands::Where => todo!(),
             Commands::Drain { store } => todo!(),
             Commands::Sync { store } => todo!(),
             Commands::Pour { force, store } => todo!(),
+        };
+
+        let machine: Machine = machine_buf.as_str().try_into()?;
+        log::debug!("\n{:#?}", machine);
+
+        // if overdosed, write local conf to drugstore/.underdose/<name>.toml
+        // and create a soft symlink
+        if machine.overdose {
+            Conf {
+                buffer: machine_buf,
+                path: machine
+                    .local
+                    .join(".underdose")
+                    .join(&format!("{}.toml", machine.name)),
+            }
+            .ensure_forced()?;
         }
 
         Ok(())
