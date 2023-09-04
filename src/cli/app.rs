@@ -8,7 +8,7 @@ use crate::{
     Drugstore, Machine,
 };
 use clap::{Parser, Subcommand};
-use directories_next::ProjectDirs;
+use directories::ProjectDirs;
 use std::path::PathBuf;
 
 impl Cli {

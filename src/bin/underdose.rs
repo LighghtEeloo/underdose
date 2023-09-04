@@ -1,7 +1,7 @@
 #![allow(unused)]
 #![allow(clippy::useless_format)]
 
-use directories_next::ProjectDirs;
+use directories::ProjectDirs;
 use git2::Repository;
 use std::io;
 use underdose::{
