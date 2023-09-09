@@ -325,7 +325,7 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
                         .local
                         .join(quasi.repo.unwrap_or_else(|| name.into())),
                 )?,
-                mode: quasi.mode.unwrap_or(machine.sync),
+                mode: quasi.mode.unwrap_or(AtomMode::Link),
             })
         } else {
             None
@@ -344,7 +344,7 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
                     new_stem.push(Atom {
                         site: site.clone(),
                         repo: quasi.repo.unwrap_or(site),
-                        mode: quasi.mode.unwrap_or(machine.sync),
+                        mode: quasi.mode.unwrap_or(AtomMode::Link),
                     })
                 }
                 Some(DripInner::Addicted {

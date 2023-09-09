@@ -7,9 +7,10 @@ pub mod cli {
 
     pub use interface::Cli;
 }
-pub mod dynamics;
 pub mod machine;
 pub mod store;
+pub mod dump {}
+pub mod dynamics;
 pub mod utils {
     pub mod conf;
     pub mod repo;

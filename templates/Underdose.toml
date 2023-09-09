@@ -1,41 +1,35 @@
 # DO NOT DELETE ANY OPTION because it's better to keep things obvious.
 
-# see `DrugStore.toml` for a full example of `env`
+# Describe the tag set of the machine which forms the `env`.
+# See `DrugStore.toml` for a full example.
 env = ["arch"]
 
-# path to the local drugstore repos
+# Information about the drugstore which includes the name, remote git repo,
+# local path, and whether to bootstrap this config into the drugstore.
 [repo]
 name = "archan"
+
+# A remote git repo to sync with.
 #remote = "git@your-git-server:your-user/your-repo"
 #branch = "main"
+
+# The path to the local drugstore repos.
 #local = "path/to/your/local/drugstore/repo"
 
-[defaults]
-
-# sync :> "link" | "copy"
-sync = "link"
-
-# path to cache dir; remove entry to use the default
-#cache = "path/to/your/cache/dir"
-
-# recent pill-wise versions to keep; remove entry for unlimited
-#undo = 100
-
-# global ignore
-ignore = ["**/.git"]
-
-[features]
-
-# collect local `Underdose.toml` to the drugstore/.underdose dir
+# Whether to collect local `Underdose.toml` to the drugstore/.underdose dir,
+# with a file name of `<name>.toml`.
 overdose = true
 
-# git submodule support: drip level submodule detection; automatically clones
-# git repo to the drugstore if not present
-submodule = true
+[observe]
 
-# sync local symlinks in settings
-symlink = false
+# A global ignore pattern for all files you don't want to observe a difference
+# in your dreams.
+ignore = [".DS_Store"]
 
+[cache]
+
+# Recent pill-wise dumps to keep; -1 for unlimited.
+dump = -1
 
 # After carefully editing the rest of the file, remove this line and below to
 # make this `Underdose.toml` file valid and ready to use.

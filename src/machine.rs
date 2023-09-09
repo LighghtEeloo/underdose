@@ -10,13 +10,10 @@ pub struct Machine {
     pub remote: String,
     pub branch: String,
     pub local: PathBuf,
-    pub sync: AtomMode,
     pub cache: Option<PathBuf>,
     pub undo: Option<usize>,
     pub ignore: IgnoreSetBuilder,
     pub overdose: bool,
-    pub submodule: bool,
-    pub symlink: bool,
 }
 
 mod parse {
@@ -44,7 +41,6 @@ mod parse {
     #[derive(Serialize, Deserialize, Debug)]
     #[serde(deny_unknown_fields)]
     pub struct Defaults {
-        pub sync: AtomMode,
         pub cache: Option<PathBuf>,
         pub undo: Option<usize>,
         pub ignore: Vec<String>,
@@ -54,8 +50,6 @@ mod parse {
     #[serde(deny_unknown_fields)]
     pub struct Features {
         pub overdose: bool,
-        pub submodule: bool,
-        pub symlink: bool,
     }
 }
 
@@ -83,7 +77,6 @@ impl TryFrom<parse::Machine> for Machine {
                 },
             defaults:
                 parse::Defaults {
-                    sync,
                     cache,
                     undo,
                     ignore,
@@ -91,8 +84,6 @@ impl TryFrom<parse::Machine> for Machine {
             features:
                 parse::Features {
                     overdose,
-                    submodule,
-                    symlink,
                 },
             tutorial,
         }: parse::Machine,
@@ -107,13 +98,10 @@ impl TryFrom<parse::Machine> for Machine {
             remote,
             branch,
             local: utils::path::expand_home(&local)?,
-            sync,
             cache,
             undo,
             ignore: IgnoreSetBuilder::new().chain(ignore.iter()),
             overdose,
-            submodule,
-            symlink,
         })
     }
 }
