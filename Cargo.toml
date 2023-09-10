@@ -40,7 +40,7 @@ toml_edit = "0.19"
 # glob
 globset = "0.4"
 
-# tar.gz
+# fs
 tar = "0.4"
 
 # git operations

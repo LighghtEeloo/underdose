@@ -7,9 +7,8 @@ pub mod cli {
 }
 pub mod machine;
 pub mod store;
-pub mod dump {
-    pub mod man;
-    pub mod item;
+pub mod dream {
+    pub mod dump;
 }
 pub mod dynamics;
 pub mod utils {
