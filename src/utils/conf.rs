@@ -24,18 +24,14 @@ pub struct Conf {
 impl Conf {
     pub fn ensure_exist(&self) -> anyhow::Result<&Self> {
         if !self.path.exists() {
-            std::fs::create_dir_all(
-                self.path.parent().expect("config path should have parent"),
-            )?;
+            std::fs::create_dir_all(self.path.parent().expect("config path should have parent"))?;
             std::fs::write(&self.path, &self.buffer)?;
         }
         Ok(self)
     }
     pub fn ensure_forced(&self) -> anyhow::Result<&Self> {
         if !self.path.exists() {
-            std::fs::create_dir_all(
-                self.path.parent().expect("config path should have parent"),
-            )?;
+            std::fs::create_dir_all(self.path.parent().expect("config path should have parent"))?;
         }
         std::fs::write(&self.path, &self.buffer)?;
         Ok(self)
@@ -48,8 +44,8 @@ impl Conf {
     }
 
     pub fn edit(&self) -> anyhow::Result<()> {
-        let editor = std::env::var("EDITOR")
-            .map_err(|_| anyhow::anyhow!("$EDITOR envvar not set"))?;
+        let editor =
+            std::env::var("EDITOR").map_err(|_| anyhow::anyhow!("$EDITOR envvar not set"))?;
         let status = std::process::Command::new(editor)
             .arg(&self.path)
             .status()
@@ -109,9 +105,7 @@ impl IgnoreSetBuilder {
         let globs = GlobSetBuilder::new();
         Self { globs }
     }
-    pub fn chain(
-        mut self, ignore: impl Iterator<Item = impl AsRef<str>>,
-    ) -> Self {
+    pub fn chain(mut self, ignore: impl Iterator<Item = impl AsRef<str>>) -> Self {
         for p in ignore {
             let p = p.as_ref();
             self.globs.add(

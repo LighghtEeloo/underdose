@@ -55,15 +55,13 @@ impl Display for AtomOb {
             AtomMode::FileCopy => "==>".bright_yellow(),
             AtomMode::Link => "~~>".blue(),
         };
-        let path_display =
-            |f: &mut std::fmt::Formatter<'_>,
-             (path, exists): &(PathBuf, bool)| {
-                if *exists {
-                    write!(f, "[{}]", path.display())
-                } else {
-                    write!(f, "[{}]", format!("{}", path.display()).red(),)
-                }
-            };
+        let path_display = |f: &mut std::fmt::Formatter<'_>, (path, exists): &(PathBuf, bool)| {
+            if *exists {
+                write!(f, "[{}]", path.display())
+            } else {
+                write!(f, "[{}]", format!("{}", path.display()).red(),)
+            }
+        };
         write!(f, "{} :: ", mode)?;
         path_display(f, &self.src)?;
         write!(f, " {} ", arrow)?;

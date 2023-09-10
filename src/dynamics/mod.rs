@@ -18,9 +18,7 @@ pub use AtomArrow::*;
 
 pub trait Probing {
     type Observation;
-    fn probing(
-        &self, machine: &Machine, arrow: AtomArrow,
-    ) -> anyhow::Result<Self::Observation>;
+    fn probing(&self, machine: &Machine, arrow: AtomArrow) -> anyhow::Result<Self::Observation>;
 }
 
 pub trait Synthesis {

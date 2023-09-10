@@ -8,40 +8,32 @@ use std::path::{Path, PathBuf};
 impl Probing for Pill {
     type Observation = PillOb;
 
-    fn probing(
-        &self, machine: &Machine, arrow: AtomArrow,
-    ) -> anyhow::Result<Self::Observation> {
+    fn probing(&self, machine: &Machine, arrow: AtomArrow) -> anyhow::Result<Self::Observation> {
         log::trace!("probing pill <{}>", self.name);
-        let root = self.drip.root.as_ref().ok_or_else(|| {
-            anyhow::anyhow!("no root set for pill <{}>", self.name)
-        })?;
+        let root = self
+            .drip
+            .root
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("no root set for pill <{}>", self.name))?;
         Ok(PillOb {
             name: self.name.to_owned(),
             root: root.probing(machine, arrow)?,
             inner: match &self.drip.inner {
-                Some(DripInner::GitModule { remote }) => {
-                    PillObInner::GitModule {
-                        remote: match remote.parse() {
-                            Ok(url) => Box::new(url),
-                            Err(e) => Err(anyhow::anyhow!("{:?}", e))?,
-                        },
+                Some(DripInner::GitModule { remote }) => PillObInner::GitModule {
+                    remote: match remote.parse() {
+                        Ok(url) => Box::new(url),
+                        Err(e) => Err(anyhow::anyhow!("{:?}", e))?,
+                    },
+                },
+                Some(DripInner::Addicted { stem, ignore }) => PillObInner::Addicted {
+                    atoms: AddictedDrip {
+                        root,
+                        ignore_set: &machine.ignore.clone().chain(ignore.iter()).build(),
+                        machine,
+                        arrow,
                     }
-                }
-                Some(DripInner::Addicted { stem, ignore }) => {
-                    PillObInner::Addicted {
-                        atoms: AddictedDrip {
-                            root,
-                            ignore_set: &machine
-                                .ignore
-                                .clone()
-                                .chain(ignore.iter())
-                                .build(),
-                            machine,
-                            arrow,
-                        }
-                        .resolve(stem)?,
-                    }
-                }
+                    .resolve(stem)?,
+                },
                 None => Err(anyhow::anyhow!("no variant set"))?,
             },
         })
@@ -73,15 +65,10 @@ impl<'a> AddictedDrip<'a> {
             {
                 AtomMode::Link => {
                     // Note: symlinks always have repo -> site orientation
-                    atoms.push(
-                        self.atom_append(atom)
-                            .probing(self.machine, self.arrow)?,
-                    )
+                    atoms.push(self.atom_append(atom).probing(self.machine, self.arrow)?)
                 }
                 AtomMode::FileCopy => {
-                    let atom = &self
-                        .atom_append(atom)
-                        .probing(self.machine, self.arrow)?;
+                    let atom = &self.atom_append(atom).probing(self.machine, self.arrow)?;
                     self.resolve_atom(&mut atoms, &atom.src, &atom.dst)?
                 }
             }
@@ -89,8 +76,7 @@ impl<'a> AddictedDrip<'a> {
         Ok(atoms)
     }
     fn resolve_atom(
-        self, atoms: &mut Vec<AtomOb>, src: &(PathBuf, bool),
-        dst: &(PathBuf, bool),
+        self, atoms: &mut Vec<AtomOb>, src: &(PathBuf, bool), dst: &(PathBuf, bool),
     ) -> anyhow::Result<()> {
         let src_p = &src.0;
         if self.ignore_set.is_ignored(src_p) {
@@ -146,18 +132,12 @@ impl Atom {
 impl Probing for Atom {
     type Observation = AtomOb;
 
-    fn probing(
-        &self, machine: &Machine, arrow: AtomArrow,
-    ) -> anyhow::Result<Self::Observation> {
+    fn probing(&self, machine: &Machine, arrow: AtomArrow) -> anyhow::Result<Self::Observation> {
         log::trace!("probing atom <{:?}>", self);
         let (src, dst) = match (self.mode, arrow) {
             (AtomMode::Link, _) => (self.repo.to_owned(), self.site.to_owned()),
-            (_, AtomArrow::SiteToRepo) => {
-                (self.site.to_owned(), self.repo.to_owned())
-            }
-            (_, AtomArrow::RepoToSite) => {
-                (self.repo.to_owned(), self.site.to_owned())
-            }
+            (_, AtomArrow::SiteToRepo) => (self.site.to_owned(), self.repo.to_owned()),
+            (_, AtomArrow::RepoToSite) => (self.repo.to_owned(), self.site.to_owned()),
         };
         let peek = |p: PathBuf| -> anyhow::Result<_> {
             let exists = p.exists();

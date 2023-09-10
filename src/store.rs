@@ -24,10 +24,7 @@ impl EnvMap {
         let mut res = HashSet::new();
         for tag in &machine.env {
             let deps = self.map.get(tag).ok_or_else(|| {
-                anyhow::anyhow!(
-                    "tag {} is not defined in env dependency map",
-                    tag
-                )
+                anyhow::anyhow!("tag {} is not defined in env dependency map", tag)
             })?;
             res.extend(deps.to_owned());
         }
@@ -190,17 +187,14 @@ impl TryFrom<(&str, &Machine)> for Drugstore {
 impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
     type Error = anyhow::Error;
 
-    fn try_from(
-        (store, machine): (parse::Drugstore, &Machine),
-    ) -> anyhow::Result<Self> {
+    fn try_from((store, machine): (parse::Drugstore, &Machine)) -> anyhow::Result<Self> {
         let mut map = HashMap::new();
         fn register_env<'e>(
-            env: &mut HashMap<String, HashSet<String>>,
-            worklist: &mut Vec<&'e str>, toml: &'e toml::Value,
+            env: &mut HashMap<String, HashSet<String>>, worklist: &mut Vec<&'e str>,
+            toml: &'e toml::Value,
         ) {
             fn register<'e>(
-                env: &mut HashMap<String, HashSet<String>>,
-                worklist: &'e [&'e str], s: &'e str,
+                env: &mut HashMap<String, HashSet<String>>, worklist: &'e [&'e str], s: &'e str,
             ) {
                 env.entry(s.to_owned())
                     .or_default()
@@ -268,9 +262,7 @@ impl<'a> DripApplyIncr<'a> {
     fn apply_force(&mut self, drip: Drip) -> anyhow::Result<()> {
         use DripInner::*;
         self.drip.root = match (drip.root, self.drip.root.clone()) {
-            (Some(_), Some(_)) => {
-                Err(anyhow::anyhow!("root set multiple times"))?
-            }
+            (Some(_), Some(_)) => Err(anyhow::anyhow!("root set multiple times"))?,
             (new @ Some(_), _) => new,
             (None, old) => old,
         };
@@ -294,9 +286,7 @@ impl<'a> DripApplyIncr<'a> {
         };
         Ok(())
     }
-    fn apply_incr(
-        mut self, drips: Vec<(HashSet<String>, Drip)>,
-    ) -> anyhow::Result<Drip> {
+    fn apply_incr(mut self, drips: Vec<(HashSet<String>, Drip)>) -> anyhow::Result<Drip> {
         for (tags, drip) in drips {
             if self.envset.check_all(&tags) {
                 self.apply_force(drip)?;
@@ -309,16 +299,12 @@ impl<'a> DripApplyIncr<'a> {
 impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
     type Error = anyhow::Error;
 
-    fn try_from(
-        (drip, name, machine): (parse::Drip, &String, &Machine),
-    ) -> anyhow::Result<Self> {
+    fn try_from((drip, name, machine): (parse::Drip, &String, &Machine)) -> anyhow::Result<Self> {
         let root = if let Some(root) = drip.root {
             let quasi: QuasiAtom = root.try_into()?;
             Some(Atom {
                 site: utils::path::expand_home(
-                    quasi
-                        .site
-                        .ok_or_else(|| anyhow::anyhow!("no site found"))?,
+                    quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?,
                 )?,
                 repo: utils::path::expand_home(
                     machine
@@ -338,9 +324,7 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
                 let mut new_stem = Vec::new();
                 for conf in stem.unwrap_or_default() {
                     let quasi: QuasiAtom = conf.try_into()?;
-                    let site = quasi
-                        .site
-                        .ok_or_else(|| anyhow::anyhow!("no site found"))?;
+                    let site = quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?;
                     new_stem.push(Atom {
                         site: site.clone(),
                         repo: quasi.repo.unwrap_or(site),
@@ -369,9 +353,7 @@ impl TryFrom<parse::Atom> for QuasiAtom {
                 repo: None,
                 mode: None,
             }),
-            parse::Atom::Rich { site, repo, mode } => {
-                Ok(QuasiAtom { site, repo, mode })
-            }
+            parse::Atom::Rich { site, repo, mode } => Ok(QuasiAtom { site, repo, mode }),
         }
     }
 }

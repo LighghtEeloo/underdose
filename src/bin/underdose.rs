@@ -1,35 +1,29 @@
-#![allow(unused)]
+// #![allow(unused)]
 #![allow(clippy::useless_format)]
 
-use directories::ProjectDirs;
 use git2::Repository;
 use std::io;
 use underdose::{
     cli::Cli,
-    dynamics::{AtomArrow, Execution, PillTask, Probing, Synthesis},
+    dynamics::{AtomArrow, Execution, Probing, Synthesis},
     utils::{
         conf::{Conf, Prompt, DRUGSTORE_TOML, UNDERDOSE_TOML},
         repo::Dirt,
+        UNDERDOSE_STATICS,
     },
     Drugstore, Machine,
 };
 
 fn main() -> anyhow::Result<()> {
     env_logger::init();
-    let underdose_dirs = ProjectDirs::from("", "LitiaEeloo", "Underdose")
-        .expect("No valid config directory fomulated");
-
     let cli = Cli::new();
     // let cli = Cli::new().main()?;
 
     // read underdose_conf into machine
-    let underdose_conf_name = "Underdose.toml";
     let underdose_conf = Conf {
         buffer: UNDERDOSE_TOML.to_owned(),
         // either from cli or from default
-        path: cli.config.unwrap_or_else(|| {
-            underdose_dirs.config_dir().join(underdose_conf_name)
-        }),
+        path: cli.config.unwrap_or_else(|| UNDERDOSE_STATICS.conf.clone()),
     };
     log::info!(
         "\nreading underdose_conf: {}",
@@ -76,8 +70,6 @@ fn main() -> anyhow::Result<()> {
         }
         return Ok(());
     }
-
-    std::process::exit(0);
 
     // synthesize and execute tasks
     for (_, pill) in &store.pills {

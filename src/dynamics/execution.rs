@@ -66,13 +66,9 @@ impl Execution for AtomTask {
                 #[cfg(windows)]
                 {
                     if self.src.is_file() {
-                        std::os::windows::fs::symlink_file(
-                            &self.src, &self.dst,
-                        )?;
+                        std::os::windows::fs::symlink_file(&self.src, &self.dst)?;
                     } else if self.src.is_dir() {
-                        std::os::windows::fs::symlink_dir(
-                            &self.src, &self.dst,
-                        )?;
+                        std::os::windows::fs::symlink_dir(&self.src, &self.dst)?;
                     }
                 }
             }

@@ -1,23 +1,18 @@
 use super::interface::{Cli, Commands};
 use crate::{
-    dynamics::{AtomArrow, Execution, PillTask, Synthesis},
     utils::{
-        conf::{Conf, Prompt, UnderdoseConf},
-        repo::Dirt,
+        conf::{Conf, UnderdoseConf},
+        UNDERDOSE_STATICS,
     },
-    Drugstore, Machine,
+    Machine,
 };
-use clap::{Parser, Subcommand};
-use directories::ProjectDirs;
-use std::path::PathBuf;
+use clap::Parser;
 
 impl Cli {
     pub fn new() -> Self {
         Self::parse()
     }
     pub fn main(self) -> anyhow::Result<()> {
-        let default_dirs = ProjectDirs::from("", "LitiaEeloo", "Underdose")
-            .expect("No valid config directory fomulated");
         let current_dir = std::env::current_dir()?;
 
         // step 1: read underdose_conf into machine
@@ -28,7 +23,6 @@ impl Cli {
                 // 1. --config
                 // 2. current_dir.join(".underdose/").join("{--name}.toml")
                 // 3. underdose_dirs.config_dir().join(underdose_conf_name)
-                let underdose_conf_name = "Underdose.toml";
                 let underdose_conf_path = {
                     self.config.unwrap_or_else(|| {
                         let underdose_repo_conf_path = current_dir
@@ -37,12 +31,11 @@ impl Cli {
                         if underdose_repo_conf_path.exists() {
                             underdose_repo_conf_path
                         } else {
-                            default_dirs.config_dir().join(underdose_conf_name)
+                            UNDERDOSE_STATICS.conf.clone()
                         }
                     })
                 };
-                let underdose_conf =
-                    UnderdoseConf::new(name).conf(underdose_conf_path);
+                let underdose_conf = UnderdoseConf::new(name).conf(underdose_conf_path);
                 log::info!(
                     "\nediting underdose_conf: {}",
                     underdose_conf.path.display()

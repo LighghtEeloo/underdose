@@ -1,5 +1,4 @@
-use crate::utils::conf::IgnoreSetBuilder;
-use crate::{store::AtomMode, utils};
+use crate::utils::{conf::IgnoreSetBuilder, path};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, path::PathBuf};
 
@@ -81,10 +80,7 @@ impl TryFrom<parse::Machine> for Machine {
                     undo,
                     ignore,
                 },
-            features:
-                parse::Features {
-                    overdose,
-                },
+            features: parse::Features { overdose },
             tutorial,
         }: parse::Machine,
     ) -> Result<Self, Self::Error> {
@@ -97,7 +93,7 @@ impl TryFrom<parse::Machine> for Machine {
             env,
             remote,
             branch,
-            local: utils::path::expand_home(&local)?,
+            local: path::expand_home(&local)?,
             cache,
             undo,
             ignore: IgnoreSetBuilder::new().chain(ignore.iter()),

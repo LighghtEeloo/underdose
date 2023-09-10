@@ -2,8 +2,8 @@ use crate::store::{Atom, AtomMode, DripInner, Pill};
 use crate::Machine;
 use crate::{
     dynamics::{
-        AtomArrow, AtomOb, AtomTask, PillOb, PillObInner, PillTask,
-        PillTaskInner, RepoToSite, SiteToRepo, Synthesis,
+        AtomArrow, AtomOb, AtomTask, PillOb, PillObInner, PillTask, PillTaskInner, RepoToSite,
+        SiteToRepo, Synthesis,
     },
     utils::{self, conf::IgnoreSet},
 };
