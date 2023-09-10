@@ -11,7 +11,7 @@ pub struct DumpManager {
     pub map: HashMap<String, DumpPill>,
 }
 
-#[derive(Default, Serialize, Deserialize, Debug)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct DumpPill {
     pub name: String,
     pub root: PathBuf,
@@ -29,6 +29,7 @@ impl DumpManager {
     pub fn uid_path(name: impl AsRef<str>, uid: u128) -> PathBuf {
         Self::path().join(name.as_ref()).join(format!("{}", uid))
     }
+
     pub fn new() -> Self {
         let Ok(content) = std::fs::read_to_string(Self::index_path()) else {
             return Self::default();
@@ -38,6 +39,7 @@ impl DumpManager {
         };
         res
     }
+
     pub fn dump(&mut self, name: String, root: PathBuf, stems: Vec<PathBuf>) -> anyhow::Result<()> {
         let uid = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos() as u128;
         let path = Self::uid_path(&name, uid);
@@ -57,13 +59,28 @@ impl DumpManager {
             .insert(uid);
         Ok(())
     }
-    pub fn recover_last(&self, name: String) -> anyhow::Result<()> {
-        let Some(pill) = self.map.get(&name) else {
+
+    pub fn recover_last(&mut self, name: String) -> anyhow::Result<()> {
+        let Some(pill) = self.map.get(&name).cloned() else {
             return Ok(())
         };
         let Some(uid) = pill.versions.iter().last() else {
             return Ok(())
         };
+
+        // check if need to dump
+        let mut need_dump = false;
+        for stem in pill.stems.iter() {
+            if pill.root.join(stem).exists() {
+                need_dump = true;
+                break;
+            }
+        }
+        if need_dump {
+            self.dump(name.clone(), pill.root.clone(), pill.stems.clone())?;
+        }
+
+        // recover
         let path = Self::uid_path(&name, *uid);
         std::fs::create_dir_all(&pill.root)?;
         for stem in pill.stems.iter() {
@@ -71,6 +88,7 @@ impl DumpManager {
         }
         Ok(())
     }
+
     fn remove_from_version(
         &mut self, name: String, mut f: impl FnMut(&mut BTreeSet<u128>) -> Option<u128>,
     ) -> anyhow::Result<()> {
@@ -84,6 +102,7 @@ impl DumpManager {
         pill.versions.remove(&uid);
         Ok(())
     }
+
     pub fn remove_oldest(&mut self, name: String) -> anyhow::Result<()> {
         self.remove_from_version(name, |version| version.pop_first())
     }
