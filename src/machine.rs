@@ -93,7 +93,7 @@ impl TryFrom<parse::Machine> for Machine {
             env,
             remote,
             branch,
-            local: path::expand_home(&local)?,
+            local: path::expand_home(&local),
             cache,
             undo,
             ignore: IgnoreSetBuilder::new().chain(ignore.iter()),

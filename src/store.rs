@@ -71,30 +71,32 @@ pub struct Drip {
 #[derive(Serialize, Debug, Clone)]
 pub struct Atom {
     pub site: PathBuf,
-    pub repo: PathBuf,
-    pub mode: AtomMode,
+    pub src: AtomSrc,
 }
 
 #[derive(Serialize, Debug, Clone)]
 pub struct QuasiAtom {
     pub site: Option<PathBuf>,
     pub repo: Option<PathBuf>,
-    pub mode: Option<AtomMode>,
+    pub mode: Option<AtomSrc>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub enum AtomMode {
+pub enum AtomSrc {
     #[serde(rename = "git")]
     Git(String),
     #[serde(rename = "link")]
-    Link,
+    Link(PathBuf),
+    #[serde(rename = "collector")]
+    Collector,
 }
 
-impl Display for AtomMode {
+impl Display for AtomSrc {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AtomMode::Git(remote) => write!(f, "git({})", remote),
-            AtomMode::Link => write!(f, "ln"),
+            AtomSrc::Git(remote) => write!(f, "git({})", remote),
+            AtomSrc::Link(repo) => write!(f, "ln({})", repo.display()),
+            AtomSrc::Collector => write!(f, "collector"),
         }
     }
 }
@@ -136,7 +138,7 @@ mod parse {
         Rich {
             site: Option<PathBuf>,
             repo: Option<PathBuf>,
-            mode: Option<AtomMode>,
+            mode: Option<AtomSrc>,
         },
     }
 }
@@ -255,13 +257,14 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
             Some(Atom {
                 site: utils::path::expand_home(
                     quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?,
-                )?,
-                repo: utils::path::expand_home(
-                    machine
-                        .local
-                        .join(quasi.repo.unwrap_or_else(|| name.into())),
-                )?,
-                mode: quasi.mode.unwrap_or(AtomMode::Link),
+                ),
+                src: quasi.mode.unwrap_or_else(|| {
+                    AtomSrc::Link(utils::path::expand_home(
+                        machine
+                            .local
+                            .join(quasi.repo.unwrap_or_else(|| name.into())),
+                    ))
+                }),
             })
         } else {
             None
@@ -273,8 +276,9 @@ impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
             let site = quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?;
             stem.push(Atom {
                 site: site.clone(),
-                repo: quasi.repo.unwrap_or(site),
-                mode: quasi.mode.unwrap_or(AtomMode::Link),
+                src: quasi
+                    .mode
+                    .unwrap_or_else(|| AtomSrc::Link(quasi.repo.unwrap_or(site))),
             })
         }
         let ignore = drip.ignore.unwrap_or_default();

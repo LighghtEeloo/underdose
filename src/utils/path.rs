@@ -8,12 +8,12 @@ pub fn ensured_dir<P: AsRef<Path>>(dir_path: P) -> anyhow::Result<PathBuf> {
     Ok(dir_path)
 }
 
-pub fn expand_home<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
-    Ok(PathBuf::from(shellexpand::path::tilde(path.as_ref())))
+pub fn expand_home<P: AsRef<Path>>(path: P) -> PathBuf {
+    PathBuf::from(shellexpand::path::tilde(path.as_ref()))
 }
 
 pub fn canonicalize<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
-    let path = expand_home(path)?;
+    let path = expand_home(path);
     let parent = path
         .parent()
         .ok_or_else(|| anyhow::anyhow!("path <{}> should have parent", path.display()))?;
