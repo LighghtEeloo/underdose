@@ -18,8 +18,6 @@ set edit:completion:arg-completer[underdose] = {|@words|
     }
     var completions = [
         &'underdose'= {
-            cand -c 'Use a custom config file'
-            cand --config 'Use a custom config file'
             cand -h 'Print help'
             cand --help 'Print help'
             cand -V 'Print version'
@@ -27,9 +25,7 @@ set edit:completion:arg-completer[underdose] = {|@words|
             cand init 'Initialize on a new machine, working from drugstore repo'
             cand config 'Configure the machine'
             cand where 'Shows all path information available'
-            cand drain 'Drain the machine to the drugstore'
-            cand sync 'Drain the machine to the drugstore, and pour on condition'
-            cand pour 'Pour the drugstore to the machine'
+            cand sync 'Make a dream on the machine, and pour if possible'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
         &'underdose;init'= {
@@ -44,23 +40,7 @@ set edit:completion:arg-completer[underdose] = {|@words|
             cand -h 'Print help'
             cand --help 'Print help'
         }
-        &'underdose;drain'= {
-            cand -s 'The name of the drugstore repo'
-            cand --store 'The name of the drugstore repo'
-            cand -h 'Print help'
-            cand --help 'Print help'
-        }
         &'underdose;sync'= {
-            cand -s 'The name of the drugstore repo'
-            cand --store 'The name of the drugstore repo'
-            cand -h 'Print help'
-            cand --help 'Print help'
-        }
-        &'underdose;pour'= {
-            cand -s 'The name of the drugstore repo'
-            cand --store 'The name of the drugstore repo'
-            cand -f 'f'
-            cand --force 'force'
             cand -h 'Print help'
             cand --help 'Print help'
         }
@@ -68,9 +48,7 @@ set edit:completion:arg-completer[underdose] = {|@words|
             cand init 'Initialize on a new machine, working from drugstore repo'
             cand config 'Configure the machine'
             cand where 'Shows all path information available'
-            cand drain 'Drain the machine to the drugstore'
-            cand sync 'Drain the machine to the drugstore, and pour on condition'
-            cand pour 'Pour the drugstore to the machine'
+            cand sync 'Make a dream on the machine, and pour if possible'
             cand help 'Print this message or the help of the given subcommand(s)'
         }
         &'underdose;help;init'= {
@@ -79,11 +57,7 @@ set edit:completion:arg-completer[underdose] = {|@words|
         }
         &'underdose;help;where'= {
         }
-        &'underdose;help;drain'= {
-        }
         &'underdose;help;sync'= {
-        }
-        &'underdose;help;pour'= {
         }
         &'underdose;help;help'= {
         }

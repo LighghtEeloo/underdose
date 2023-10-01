@@ -21,8 +21,6 @@ Register-ArgumentCompleter -Native -CommandName 'underdose' -ScriptBlock {
 
     $completions = @(switch ($command) {
         'underdose' {
-            [CompletionResult]::new('-c', 'c', [CompletionResultType]::ParameterName, 'Use a custom config file')
-            [CompletionResult]::new('--config', 'config', [CompletionResultType]::ParameterName, 'Use a custom config file')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('-V', 'V', [CompletionResultType]::ParameterName, 'Print version')
@@ -30,9 +28,7 @@ Register-ArgumentCompleter -Native -CommandName 'underdose' -ScriptBlock {
             [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterValue, 'Initialize on a new machine, working from drugstore repo')
             [CompletionResult]::new('config', 'config', [CompletionResultType]::ParameterValue, 'Configure the machine')
             [CompletionResult]::new('where', 'where', [CompletionResultType]::ParameterValue, 'Shows all path information available')
-            [CompletionResult]::new('drain', 'drain', [CompletionResultType]::ParameterValue, 'Drain the machine to the drugstore')
-            [CompletionResult]::new('sync', 'sync', [CompletionResultType]::ParameterValue, 'Drain the machine to the drugstore, and pour on condition')
-            [CompletionResult]::new('pour', 'pour', [CompletionResultType]::ParameterValue, 'Pour the drugstore to the machine')
+            [CompletionResult]::new('sync', 'sync', [CompletionResultType]::ParameterValue, 'Make a dream on the machine, and pour if possible')
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
             break
         }
@@ -51,25 +47,7 @@ Register-ArgumentCompleter -Native -CommandName 'underdose' -ScriptBlock {
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
             break
         }
-        'underdose;drain' {
-            [CompletionResult]::new('-s', 's', [CompletionResultType]::ParameterName, 'The name of the drugstore repo')
-            [CompletionResult]::new('--store', 'store', [CompletionResultType]::ParameterName, 'The name of the drugstore repo')
-            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
-            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
-            break
-        }
         'underdose;sync' {
-            [CompletionResult]::new('-s', 's', [CompletionResultType]::ParameterName, 'The name of the drugstore repo')
-            [CompletionResult]::new('--store', 'store', [CompletionResultType]::ParameterName, 'The name of the drugstore repo')
-            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
-            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
-            break
-        }
-        'underdose;pour' {
-            [CompletionResult]::new('-s', 's', [CompletionResultType]::ParameterName, 'The name of the drugstore repo')
-            [CompletionResult]::new('--store', 'store', [CompletionResultType]::ParameterName, 'The name of the drugstore repo')
-            [CompletionResult]::new('-f', 'f', [CompletionResultType]::ParameterName, 'f')
-            [CompletionResult]::new('--force', 'force', [CompletionResultType]::ParameterName, 'force')
             [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
             [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
             break
@@ -78,9 +56,7 @@ Register-ArgumentCompleter -Native -CommandName 'underdose' -ScriptBlock {
             [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterValue, 'Initialize on a new machine, working from drugstore repo')
             [CompletionResult]::new('config', 'config', [CompletionResultType]::ParameterValue, 'Configure the machine')
             [CompletionResult]::new('where', 'where', [CompletionResultType]::ParameterValue, 'Shows all path information available')
-            [CompletionResult]::new('drain', 'drain', [CompletionResultType]::ParameterValue, 'Drain the machine to the drugstore')
-            [CompletionResult]::new('sync', 'sync', [CompletionResultType]::ParameterValue, 'Drain the machine to the drugstore, and pour on condition')
-            [CompletionResult]::new('pour', 'pour', [CompletionResultType]::ParameterValue, 'Pour the drugstore to the machine')
+            [CompletionResult]::new('sync', 'sync', [CompletionResultType]::ParameterValue, 'Make a dream on the machine, and pour if possible')
             [CompletionResult]::new('help', 'help', [CompletionResultType]::ParameterValue, 'Print this message or the help of the given subcommand(s)')
             break
         }
@@ -93,13 +69,7 @@ Register-ArgumentCompleter -Native -CommandName 'underdose' -ScriptBlock {
         'underdose;help;where' {
             break
         }
-        'underdose;help;drain' {
-            break
-        }
         'underdose;help;sync' {
-            break
-        }
-        'underdose;help;pour' {
             break
         }
         'underdose;help;help' {
