@@ -4,12 +4,20 @@ pub mod cli {
 
     pub use interface::Cli;
 }
+
 pub mod machine;
 pub mod store;
-pub mod dream {
-    pub mod dump;
-    pub mod observe;
-}
+pub use machine::Machine;
+pub use store::Drugstore;
+
+mod executor;
+mod observor;
+mod dreamer;
+pub use executor::Executor;
+pub use dreamer::Dreamer;
+
+mod drip;
+pub use drip::{Arrow, ArrowSrc, Drip};
 
 pub mod utils {
     pub mod conf;
@@ -19,6 +27,3 @@ pub mod utils {
     pub mod global;
     pub use global::UNDERDOSE_STATICS;
 }
-
-pub use machine::Machine;
-pub use store::Drugstore;

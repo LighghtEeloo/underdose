@@ -7,7 +7,7 @@ use std::{
 };
 
 #[derive(Default, Serialize, Deserialize, Debug)]
-pub struct DumpManager {
+pub struct Dreamer {
     pub map: HashMap<String, DumpPill>,
 }
 
@@ -19,7 +19,7 @@ pub struct DumpPill {
     pub versions: BTreeSet<u128>,
 }
 
-impl DumpManager {
+impl Dreamer {
     pub fn path() -> &'static Path {
         &UNDERDOSE_STATICS.dump.as_path()
     }
@@ -111,7 +111,7 @@ impl DumpManager {
     }
 }
 
-impl Drop for DumpManager {
+impl Drop for Dreamer {
     fn drop(&mut self) {
         let content = serde_json::to_string(&self).expect("failed to serialize index.json");
         std::fs::create_dir_all(Self::path()).expect("failed to create dump dir");
