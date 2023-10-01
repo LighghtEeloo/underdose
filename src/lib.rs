@@ -5,8 +5,8 @@ pub mod cli {
     pub use interface::Cli;
 }
 
-pub mod machine;
-pub mod store;
+mod machine;
+mod store;
 pub use machine::Machine;
 pub use store::Drugstore;
 
@@ -25,5 +25,4 @@ pub mod utils {
     pub mod path;
 
     pub mod global;
-    pub use global::UNDERDOSE_STATICS;
 }

@@ -1,4 +1,4 @@
-use crate::utils::UNDERDOSE_STATICS;
+use crate::utils::global::UNDERDOSE_PATH;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeSet, HashMap},
@@ -8,11 +8,11 @@ use std::{
 
 #[derive(Default, Serialize, Deserialize, Debug)]
 pub struct Dreamer {
-    pub map: HashMap<String, DumpPill>,
+    pub map: HashMap<String, DreamPill>,
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct DumpPill {
+pub struct DreamPill {
     pub name: String,
     pub root: PathBuf,
     pub stems: Vec<PathBuf>,
@@ -21,12 +21,12 @@ pub struct DumpPill {
 
 impl Dreamer {
     pub fn path() -> &'static Path {
-        &UNDERDOSE_STATICS.dump.as_path()
+        &UNDERDOSE_PATH.dump.as_path()
     }
-    pub fn index_path() -> PathBuf {
+    fn index_path() -> PathBuf {
         Self::path().join("index.json")
     }
-    pub fn uid_path(name: impl AsRef<str>, uid: u128) -> PathBuf {
+    fn uid_path(name: impl AsRef<str>, uid: u128) -> PathBuf {
         Self::path().join(name.as_ref()).join(format!("{}", uid))
     }
 
@@ -49,7 +49,7 @@ impl Dreamer {
         }
         self.map
             .entry(name.clone())
-            .or_insert(DumpPill {
+            .or_insert(DreamPill {
                 name,
                 root,
                 stems,
@@ -62,10 +62,10 @@ impl Dreamer {
 
     pub fn recover_last(&mut self, name: String) -> anyhow::Result<()> {
         let Some(pill) = self.map.get(&name).cloned() else {
-            return Ok(())
+            return Ok(());
         };
         let Some(uid) = pill.versions.iter().last() else {
-            return Ok(())
+            return Ok(());
         };
 
         // check if need to dump
@@ -93,10 +93,10 @@ impl Dreamer {
         &mut self, name: String, mut f: impl FnMut(&mut BTreeSet<u128>) -> Option<u128>,
     ) -> anyhow::Result<()> {
         let Some(pill) = self.map.get_mut(&name) else {
-            return Ok(())
+            return Ok(());
         };
         let Some(uid) = f(&mut pill.versions) else {
-            return Ok(())
+            return Ok(());
         };
         std::fs::remove_dir(Self::uid_path(&name, uid))?;
         pill.versions.remove(&uid);
@@ -109,13 +109,21 @@ impl Dreamer {
     pub fn remove_latest(&mut self, name: String) -> anyhow::Result<()> {
         self.remove_from_version(name, |version| version.pop_last())
     }
+
+    pub fn write_index(&self) -> anyhow::Result<()> {
+        let content = serde_json::to_string(&self)
+            .map_err(|e| anyhow::anyhow!("failed to serialize index.json: {}", e))?;
+        std::fs::create_dir_all(Self::path())
+            .map_err(|e| anyhow::anyhow!("failed to create dump dir: {}", e))?;
+        std::fs::write(Self::index_path(), content)
+            .map_err(|e| anyhow::anyhow!("failed to write index.json: {}", e))?;
+        log::info!("dumped index.json at {:?}", SystemTime::now());
+        Ok(())
+    }
 }
 
 impl Drop for Dreamer {
     fn drop(&mut self) {
-        let content = serde_json::to_string(&self).expect("failed to serialize index.json");
-        std::fs::create_dir_all(Self::path()).expect("failed to create dump dir");
-        std::fs::write(Self::index_path(), content).expect("failed to write index.json");
-        log::info!("dumped index.json at {:?}", SystemTime::now());
+        self.write_index().expect("fail on dropping dreamer");
     }
 }

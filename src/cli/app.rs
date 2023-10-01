@@ -2,7 +2,7 @@ use super::interface::{Cli, Commands};
 use crate::{
     utils::{
         conf::{Conf, UnderdoseConf},
-        UNDERDOSE_STATICS,
+        global::UNDERDOSE_PATH,
     },
     Machine,
 };
@@ -31,7 +31,7 @@ impl Cli {
                         if underdose_repo_conf_path.exists() {
                             underdose_repo_conf_path
                         } else {
-                            UNDERDOSE_STATICS.conf.clone()
+                            UNDERDOSE_PATH.conf.clone()
                         }
                     })
                 };

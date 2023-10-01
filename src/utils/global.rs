@@ -8,7 +8,7 @@ pub struct UnderdoseStatics {
     pub dreams: PathBuf,
 }
 
-pub static UNDERDOSE_STATICS: Lazy<UnderdoseStatics> = Lazy::new(|| {
+pub static UNDERDOSE_PATH: Lazy<UnderdoseStatics> = Lazy::new(|| {
     let dirs = ProjectDirs::from("", "LitiaEeloo", "Underdose")
         .expect("No valid config directory fomulated");
     UnderdoseStatics {
