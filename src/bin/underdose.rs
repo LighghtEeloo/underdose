@@ -1,7 +1,7 @@
-// 0. Configuration
-// 1. Perfect State Executor (Executor)
+// 0. Configuration (done)
+// 1. Perfect State Executor (Executor) (done)
 // 2. Perfect State Detective
-// 3. Garbage Collector (Dreamer)
+// 3. Garbage Collector (Dreamer) (done)
 
 use std::path::PathBuf;
 use underdose::{Arrow, ArrowSrc, Drip, Executor};

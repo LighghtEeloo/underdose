@@ -9,7 +9,7 @@ use std::{
 #[derive(Debug)]
 pub struct Drugstore {
     pub env: EnvSet,
-    pub pills: IndexMap<String, Pill>,
+    pub pills: IndexMap<String, Drip>,
 }
 
 /// a map of name -> upward dependencies, up to the root
@@ -146,7 +146,7 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
             match DripApplyIncr::new(&env).apply(pill) {
                 Ok(pill) => {
                     if pill.non_empty() {
-                        pills.insert(pill.name.to_owned(), pill);
+                        pills.insert(pill.name.to_owned(), pill.drip);
                     } else {
                         log::info!("ignored empty pill <{}>", name)
                     }
