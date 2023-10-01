@@ -1,8 +1,6 @@
-use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
 use std::{
-    fmt::{self, Debug},
     io::{self, Read, Write},
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 use toml_edit::Document;
 
@@ -75,67 +73,6 @@ impl UnderdoseConf {
             buffer: self.template.to_string(),
             path,
         }
-    }
-}
-
-#[must_use]
-pub fn passed_tutorial(toml: &toml::Value) -> anyhow::Result<()> {
-    if let Some(tutorial) = toml.get("tutorial") {
-        if let Some(tutorial) = tutorial.as_table() {
-            if !tutorial.is_empty() {
-                Err(anyhow::anyhow!("tutorial has not been completed yet"))?;
-            }
-        }
-    }
-    Ok(())
-}
-
-#[derive(Clone)]
-pub struct IgnoreSetBuilder {
-    globs: GlobSetBuilder,
-}
-impl Default for IgnoreSetBuilder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-impl Debug for IgnoreSetBuilder {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("IgnoreSetBuilder(..)")
-    }
-}
-
-impl IgnoreSetBuilder {
-    pub fn new() -> Self {
-        let globs = GlobSetBuilder::new();
-        Self { globs }
-    }
-    pub fn chain(mut self, ignore: impl Iterator<Item = impl AsRef<str>>) -> Self {
-        for p in ignore {
-            let p = p.as_ref();
-            self.globs.add(
-                GlobBuilder::new(p.strip_suffix('/').unwrap_or(p))
-                    .build()
-                    .expect("invalid glob pattern"),
-            );
-        }
-        self
-    }
-    pub fn build(self) -> IgnoreSet {
-        IgnoreSet {
-            globs: self.globs.build().expect("invalid globset pattern"),
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct IgnoreSet {
-    globs: GlobSet,
-}
-
-impl IgnoreSet {
-    pub fn is_ignored(&self, path: impl AsRef<Path>) -> bool {
-        self.globs.is_match(path.as_ref())
     }
 }
 
