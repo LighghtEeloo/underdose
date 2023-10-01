@@ -23,7 +23,6 @@
 name = "nvim"
 [[pill.drip]]
 root = "~/.config/nvim"
-stem = [""]
 
 # A pill about the awesome configuration, stored in a git submodule.
 # Note that the submodule will be cloned to the drugstore, and the site should be

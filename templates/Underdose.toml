@@ -9,27 +9,8 @@ env = ["arch"]
 [repo]
 name = "archan"
 
-# A remote git repo to sync with.
-#remote = "git@your-git-server:your-user/your-repo"
-#branch = "main"
-
 # The path to the local drugstore repos.
-#local = "path/to/your/local/drugstore/repo"
-
-# Whether to collect local `Underdose.toml` to the drugstore/.underdose dir,
-# with a file name of `<name>.toml`.
-overdose = true
-
-[observe]
-
-# A global ignore pattern for all files you don't want to observe a difference
-# in your dreams.
-ignore = [".DS_Store"]
-
-[cache]
-
-# Recent pill-wise dumps to keep; -1 for unlimited.
-dump = -1
+local = "path/to/your/local/drugstore/repo"
 
 # After carefully editing the rest of the file, remove this line and below to
 # make this `Underdose.toml` file valid and ready to use.
