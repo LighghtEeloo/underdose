@@ -25,6 +25,7 @@ impl EnvMap {
             let deps = self.map.get(tag).ok_or_else(|| {
                 anyhow::anyhow!("tag {} is not defined in env dependency map", tag)
             })?;
+            res.insert(tag.to_owned());
             res.extend(deps.to_owned());
         }
         Ok(EnvSet { set: res })
@@ -246,12 +247,20 @@ mod tests {
         }
         let content = content.join("\n");
 
-        // setup machine
+        // parse with linux
         let machine = crate::Machine {
             env: ["linux".to_owned()].into(),
             ..Default::default()
         };
         let store = crate::Drugstore::try_from((&content[..], &machine)).unwrap();
-        println!("{:#?}", store);
+        println!("linux: {:#?}", store);
+
+        // parse with mac
+        let machine = crate::Machine {
+            env: ["mac".to_owned()].into(),
+            ..Default::default()
+        };
+        let store = crate::Drugstore::try_from((&content[..], &machine)).unwrap();
+        println!("mac: {:#?}", store);
     }
 }
