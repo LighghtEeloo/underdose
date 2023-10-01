@@ -67,6 +67,7 @@ mod parse {
     pub struct Drugstore {
         pub env: toml::Value,
         pub pill: Vec<Pill>,
+        pub tutorial: Option<()>,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -106,6 +107,9 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
     type Error = anyhow::Error;
 
     fn try_from((store, machine): (parse::Drugstore, &Machine)) -> anyhow::Result<Self> {
+        if let Some(_) = store.tutorial {
+            Err(anyhow::anyhow!("tutorial has not been completed yet"))?;
+        }
         let mut map = HashMap::new();
         fn register_env<'e>(
             env: &mut HashMap<String, HashSet<String>>, worklist: &mut Vec<&'e str>,
@@ -228,24 +232,8 @@ impl<'a> DripApplyIncr<'a> {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn store_parse() {
-        let content = std::fs::read_to_string("templates/Drugstore.toml").unwrap();
-        let mut content: Vec<_> = content.split("\n").collect();
-        loop {
-            if let Some(last) = content.last() {
-                if last.is_empty() {
-                    content.pop();
-                } else if last.starts_with("[tutorial]") {
-                    content.pop();
-                    break;
-                } else {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-        let content = content.join("\n");
+    fn parse_store() {
+        let content = crate::utils::tests::remove_tutorial(crate::utils::conf::DRUGSTORE_TOML);
 
         // parse with linux
         let machine = crate::Machine {

@@ -25,4 +25,6 @@ pub mod utils {
     pub mod path;
 
     pub mod global;
+    #[cfg(test)]
+    pub mod tests;
 }

@@ -1,4 +1,4 @@
-use crate::utils::{conf::IgnoreSetBuilder, path};
+use crate::utils::path;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, path::PathBuf};
 
@@ -6,13 +6,7 @@ use std::{collections::HashSet, path::PathBuf};
 pub struct Machine {
     pub name: String,
     pub env: HashSet<String>,
-    pub remote: String,
-    pub branch: String,
     pub local: PathBuf,
-    pub cache: Option<PathBuf>,
-    pub undo: Option<usize>,
-    pub ignore: IgnoreSetBuilder,
-    pub overdose: bool,
 }
 
 mod parse {
@@ -23,8 +17,6 @@ mod parse {
     pub struct Machine {
         pub env: HashSet<String>,
         pub repo: Repo,
-        pub defaults: Defaults,
-        pub features: Features,
         pub tutorial: Option<()>,
     }
 
@@ -32,23 +24,7 @@ mod parse {
     #[serde(deny_unknown_fields)]
     pub struct Repo {
         pub name: String,
-        pub remote: String,
-        pub branch: String,
         pub local: PathBuf,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    #[serde(deny_unknown_fields)]
-    pub struct Defaults {
-        pub cache: Option<PathBuf>,
-        pub undo: Option<usize>,
-        pub ignore: Vec<String>,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    #[serde(deny_unknown_fields)]
-    pub struct Features {
-        pub overdose: bool,
     }
 }
 
@@ -67,20 +43,7 @@ impl TryFrom<parse::Machine> for Machine {
     fn try_from(
         parse::Machine {
             env,
-            repo:
-                parse::Repo {
-                    name,
-                    remote,
-                    branch,
-                    local,
-                },
-            defaults:
-                parse::Defaults {
-                    cache,
-                    undo,
-                    ignore,
-                },
-            features: parse::Features { overdose },
+            repo: parse::Repo { name, local },
             tutorial,
         }: parse::Machine,
     ) -> Result<Self, Self::Error> {
@@ -91,13 +54,20 @@ impl TryFrom<parse::Machine> for Machine {
         Ok(Self {
             name,
             env,
-            remote,
-            branch,
             local: path::expand_home(&local),
-            cache,
-            undo,
-            ignore: IgnoreSetBuilder::new().chain(ignore.iter()),
-            overdose,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_machine() {
+        let content = crate::utils::tests::remove_tutorial(crate::utils::conf::UNDERDOSE_TOML);
+
+        let machine = Machine::try_from(&content[..]).unwrap();
+        println!("{:#?}", machine);
     }
 }

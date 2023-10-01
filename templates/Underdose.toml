@@ -4,12 +4,10 @@
 # See `DrugStore.toml` for a full example.
 env = ["arch"]
 
-# Information about the drugstore which includes the name, remote git repo,
-# local path, and whether to bootstrap this config into the drugstore.
 [repo]
+# Name of this machine's configuration.
 name = "archan"
-
-# The path to the local drugstore repos.
+# Path to the local drugstore repo.
 local = "path/to/your/local/drugstore/repo"
 
 # After carefully editing the rest of the file, remove this line and below to

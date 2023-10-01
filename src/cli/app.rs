@@ -57,19 +57,6 @@ impl Cli {
         let machine: Machine = machine_buf.as_str().try_into()?;
         log::debug!("\n{:#?}", machine);
 
-        // if overdosed, write local conf to drugstore/.underdose/<name>.toml
-        // and create a soft symlink
-        if machine.overdose {
-            Conf {
-                buffer: machine_buf,
-                path: machine
-                    .local
-                    .join(".underdose")
-                    .join(&format!("{}.toml", machine.name)),
-            }
-            .ensure_forced()?;
-        }
-
         Ok(())
     }
 }
