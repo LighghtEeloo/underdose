@@ -2,7 +2,7 @@ use crate::utils::{conf::IgnoreSetBuilder, path};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, path::PathBuf};
 
-#[derive(Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct Machine {
     pub name: String,
     pub env: HashSet<String>,

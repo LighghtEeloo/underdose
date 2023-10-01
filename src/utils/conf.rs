@@ -94,6 +94,11 @@ pub fn passed_tutorial(toml: &toml::Value) -> anyhow::Result<()> {
 pub struct IgnoreSetBuilder {
     globs: GlobSetBuilder,
 }
+impl Default for IgnoreSetBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl Debug for IgnoreSetBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("IgnoreSetBuilder(..)")

@@ -22,7 +22,10 @@
 [[pill]]
 name = "nvim"
 [[pill.drip]]
-root = "~/.config/nvim"
+site = "~/.config/nvim"
+[[pill.drip.arrow]]
+site = "."
+src.link = "."
 
 # A pill about the awesome configuration, stored in a git submodule.
 # Note that the submodule will be cloned to the drugstore, and the site should be
@@ -30,41 +33,57 @@ root = "~/.config/nvim"
 [[pill]]
 name = "awesome"
 [[pill.drip]]
+# only makes sense under linux
+env = ["linux"]
 # You can decide where to put on site and in the repo
-root.site = "~/.config/awesome"
-root.repo = "awesome-yoru"
-root.mode = "link"
-remote = "git@github.com:path/to/awesome_conf.git"
+site = "~/.config/awesome"
+[[pill.drip.arrow]]
+site = "."
+src.git = "git@github.com:path/to/awesome_conf.git"
 
-# A pill with same configuration but with different distribution path. The root
+# A pill on emacs configuration but with different distribution path. The root
 # and stem are updated as `underdose` read through the pill and update according
 # to the matching result of env. Observe how the `drip`s drip through.
 [[pill]]
 name = "emacs"
 [[pill.drip]]
-stem = ["init.el"]
-# This outputs { root = "~/.config/emacs/", stem = ["init.el"] } for linux devices...
+repo = "emacs"
+[[pill.drip.arrow]]
+# same arrow...
+site = "init.el"
+src.link = "init.el"
+# ...but different sites...
 [[pill.drip]]
 env = ["linux"]
-root = "~/.config/emacs"
-# ...but not mac, which gets { root = "~/.emacs.d/", stem = ["init.el"] }.
+site = "~/.config/emacs"
+# ...on different envs.
 [[pill.drip]]
 env = ["mac"]
-root = "~/.emacs.d"
+site = "~/.emacs.d"
 
 # A pill with two different configurations on the same software, but share same
 # common files.
 [[pill]]
 name = "zsh"
 [[pill.drip]]
-root = "~"
-stem = [".zshrc", ".zshenv"]
+site = "~"
+repo = "zsh"
+[[pill.drip.arrow]]
+site = ".zshrc"
+src.link = ".zshrc"
+[[pill.drip.arrow]]
+site = ".zshenv"
+src.link = ".zshenv"
 [[pill.drip]]
 env = ["mac"]
-stem = [{ site = ".zsh_aliases", repo = ".zsh_aliases_mac" }]
+[[pill.drip.arrow]]
+site = ".zsh_aliases"
+src.link = ".zsh_aliases_mac"
 [[pill.drip]]
 env = ["linux"]
-stem = [{ site = ".zsh_aliases", repo = ".zsh_aliases_linux" }]
+[[pill.drip.arrow]]
+site = ".zsh_aliases"
+src.link = ".zsh_aliases_linux"
 # As for the mapping, it's just the spec requires an implementation in this
 # repo, and it will be renamed when pouring onto the machine as the LHS. This
 # time all linux machines referred to.

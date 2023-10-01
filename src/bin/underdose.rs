@@ -15,15 +15,15 @@ fn main() -> anyhow::Result<()> {
             site: "_ana/config/nvim".into(),
             rel_repo: "nvim".into(),
             arrows: vec![Arrow {
-                site: ".".into(),
-                src: ArrowSrc::Link { rel: ".".into() },
+                rel_site: ".".into(),
+                src: ArrowSrc::Link(".".into()),
             }],
         },
         Drip {
             site: "_ana/config/alacritty-theme".into(),
             rel_repo: "alacritty-theme".into(),
             arrows: vec![Arrow {
-                site: ".".into(),
+                rel_site: ".".into(),
                 src: ArrowSrc::Git("https://github.com/alacritty/alacritty-theme".to_owned()),
             }],
         },

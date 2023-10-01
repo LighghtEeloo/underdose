@@ -13,8 +13,8 @@ pub use store::Drugstore;
 mod executor;
 mod observor;
 mod dreamer;
-pub use executor::Executor;
 pub use dreamer::Dreamer;
+pub use executor::Executor;
 
 mod drip;
 pub use drip::{Arrow, ArrowSrc, Drip};

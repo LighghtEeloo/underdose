@@ -12,14 +12,15 @@ pub struct Executor<'a> {
 impl<'a> Executor<'a> {
     pub fn run(self) -> anyhow::Result<()> {
         for arrow in self.drip.arrows.iter() {
-            let site = self.drip.site.join(&arrow.site);
+            let site = self.drip.site.join(&arrow.rel_site);
             match &arrow.src {
                 ArrowSrc::Git(remote) => {
                     log::info!("git clone {} {}", remote, site.display());
-                    std::fs::create_dir_all(&site)?;
+                    let site = crate::utils::path::canonicalize(site)?;
+                    crate::utils::path::create_dir_parent(&site)?;
                     RepoBuilder::new().clone(remote, &site)?;
                 }
-                ArrowSrc::Link { rel } => {
+                ArrowSrc::Link(rel) => {
                     let repo = self.repo.join(&self.drip.rel_repo).join(rel);
 
                     log::info!("ln -s {} {}", repo.display(), site.display());

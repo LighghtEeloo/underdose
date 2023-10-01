@@ -24,18 +24,30 @@ pub fn canonicalize<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
     Ok(parent.join(file_name))
 }
 
-pub fn trim<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
-    let par = path
-        .as_ref()
+pub fn create_dir_parent<P: AsRef<Path>>(path: P) -> anyhow::Result<()> {
+    let path = expand_home(path);
+    let parent = path
         .parent()
-        .ok_or_else(|| anyhow::anyhow!("path <{}> should have parent", path.as_ref().display()))?;
-    let file_name = path.as_ref().file_name().ok_or_else(|| {
-        anyhow::anyhow!("path <{}> should have file name", path.as_ref().display())
-    })?;
-    let file_name = file_name
-        .to_str()
-        .ok_or_else(|| anyhow::anyhow!("file name should be valid utf-8"))?;
-    let file_name = file_name.trim_end_matches('/');
-    let res = par.join(file_name);
-    Ok(res)
+        .ok_or_else(|| anyhow::anyhow!("path <{}> should have parent", path.display()))?;
+    std::fs::create_dir_all(parent)?;
+    Ok(())
 }
+
+// pub fn trim<P: AsRef<Path>>(path: P) -> anyhow::Result<PathBuf> {
+//     let parent = path
+//         .as_ref()
+//         .parent()
+//         .ok_or_else(|| anyhow::anyhow!("path <{}> should have parent", path.as_ref().display()))?;
+//     let file_name = path.as_ref().file_name().ok_or_else(|| {
+//         anyhow::anyhow!("path <{}> should have file name", path.as_ref().display())
+//     })?;
+//     let file_name = file_name.to_str().ok_or_else(|| {
+//         anyhow::anyhow!(
+//             "file name in path <{}> should be valid utf-8",
+//             path.as_ref().display()
+//         )
+//     })?;
+//     let file_name = file_name.trim_end_matches('/');
+//     let res = parent.join(file_name);
+//     Ok(res)
+// }

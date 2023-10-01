@@ -1,20 +1,19 @@
-use crate::{utils, Machine};
+use crate::{Arrow, Drip, Machine};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
 use std::{
     collections::{HashMap, HashSet},
     path::PathBuf,
 };
 
-#[derive(Serialize, Debug)]
+#[derive(Debug)]
 pub struct Drugstore {
     pub env: EnvSet,
     pub pills: IndexMap<String, Pill>,
 }
 
 /// a map of name -> upward dependencies, up to the root
-#[derive(Serialize, Debug)]
+#[derive(Debug)]
 pub struct EnvMap {
     pub map: HashMap<String, HashSet<String>>,
 }
@@ -33,7 +32,7 @@ impl EnvMap {
 }
 
 /// a set of machine possesed envs
-#[derive(Serialize, Debug)]
+#[derive(Debug)]
 pub struct EnvSet {
     pub set: HashSet<String>,
 }
@@ -47,7 +46,7 @@ impl EnvSet {
     }
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Debug)]
 pub struct Pill {
     pub name: String,
     pub drip: Drip,
@@ -55,49 +54,7 @@ pub struct Pill {
 
 impl Pill {
     pub fn non_empty(&self) -> bool {
-        self.drip.root.is_some() || !self.drip.stem.is_empty()
-    }
-}
-
-#[derive(Serialize, Debug, Clone)]
-pub struct Drip {
-    pub root: Option<Atom>,
-    /// Atoms are incremented from drips but dirs aren't expanded
-    pub stem: Vec<Atom>,
-    /// ignore
-    pub ignore: Vec<String>,
-}
-
-#[derive(Serialize, Debug, Clone)]
-pub struct Atom {
-    pub site: PathBuf,
-    pub src: AtomSrc,
-}
-
-#[derive(Serialize, Debug, Clone)]
-pub struct QuasiAtom {
-    pub site: Option<PathBuf>,
-    pub repo: Option<PathBuf>,
-    pub mode: Option<AtomSrc>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq)]
-pub enum AtomSrc {
-    #[serde(rename = "git")]
-    Git(String),
-    #[serde(rename = "link")]
-    Link(PathBuf),
-    #[serde(rename = "collector")]
-    Collector,
-}
-
-impl Display for AtomSrc {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            AtomSrc::Git(remote) => write!(f, "git({})", remote),
-            AtomSrc::Link(repo) => write!(f, "ln({})", repo.display()),
-            AtomSrc::Collector => write!(f, "collector"),
-        }
+        !self.drip.arrows.is_empty()
     }
 }
 
@@ -115,31 +72,23 @@ mod parse {
     #[serde(deny_unknown_fields)]
     pub struct Pill {
         pub name: String,
-        pub drip: Vec<Drip>,
+        #[serde(alias = "drip")]
+        pub drips: Vec<Drip>,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
+    #[serde(deny_unknown_fields)]
     pub struct Drip {
         /// `tags` are resolved to trivial form during parsing
         #[serde(alias = "env", default)]
         pub tags: HashSet<String>,
-        pub root: Option<Atom>,
-        /// Atoms are incremented from drips
-        pub stem: Option<Vec<Atom>>,
-        /// ignore
-        pub ignore: Option<Vec<String>>,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    #[serde(untagged)]
-    #[serde(deny_unknown_fields)]
-    pub enum Atom {
-        Plain(String),
-        Rich {
-            site: Option<PathBuf>,
-            repo: Option<PathBuf>,
-            mode: Option<AtomSrc>,
-        },
+        /// where the root of site is, globally
+        pub site: Option<PathBuf>,
+        /// where the root of drip is, relative to repo root
+        pub repo: Option<PathBuf>,
+        /// tasks to complete
+        #[serde(alias = "arrow", default)]
+        pub arrows: Vec<Arrow>,
     }
 }
 
@@ -185,26 +134,21 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
         let mut pills = IndexMap::new();
         for pill in store.pill {
             if pills.contains_key(&pill.name) {
-                Err(anyhow::anyhow!("duplicated pill name"))?
+                Err(anyhow::anyhow!("duplicated pill name: {}", pill.name))?
             }
 
-            let mut drips = Vec::new();
-            for drip in pill.drip {
-                drips.push((
-                    drip.tags.to_owned(),
-                    (drip, &pill.name, machine).try_into()?,
-                ))
-            }
-
-            let pill = Pill {
-                name: pill.name.to_owned(),
-                drip: DripApplyIncr::new(&env).apply_incr(drips)?,
-            };
-
-            if pill.non_empty() {
-                pills.insert(pill.name.to_owned(), pill);
-            } else {
-                log::info!("ignored empty pill <{}>", pill.name)
+            let name = pill.name.clone();
+            match DripApplyIncr::new(&env).apply(pill) {
+                Ok(pill) => {
+                    if pill.non_empty() {
+                        pills.insert(pill.name.to_owned(), pill);
+                    } else {
+                        log::info!("ignored empty pill <{}>", name)
+                    }
+                }
+                Err(e) => {
+                    log::warn!("ignored pill <{}>: {}", name, e);
+                }
             }
         }
 
@@ -213,91 +157,101 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
 }
 
 struct DripApplyIncr<'a> {
-    pub drip: Drip,
+    drip: parse::Drip,
     pub envset: &'a EnvSet,
 }
 
 impl<'a> DripApplyIncr<'a> {
     fn new(envset: &'a EnvSet) -> Self {
         DripApplyIncr {
-            drip: Drip {
-                root: None,
-                stem: Vec::new(),
-                ignore: Vec::new(),
+            drip: parse::Drip {
+                tags: HashSet::new(),
+                site: None,
+                repo: None,
+                arrows: Vec::new(),
             },
             envset,
         }
     }
-    fn apply_force(&mut self, drip: Drip) -> anyhow::Result<()> {
-        self.drip.root = match (drip.root, self.drip.root.clone()) {
-            (Some(_), Some(_)) => Err(anyhow::anyhow!("root set multiple times"))?,
+    fn apply_unchecked(&mut self, drip: parse::Drip) -> anyhow::Result<()> {
+        self.drip.site = match (drip.site, self.drip.site.clone()) {
+            (Some(_), Some(_)) => Err(anyhow::anyhow!("site set multiple times"))?,
             (new @ Some(_), _) => new,
             (None, old) => old,
         };
-        self.drip.stem.extend(drip.stem);
-        self.drip.ignore.extend(drip.ignore);
+        self.drip.repo = match (drip.repo, self.drip.repo.clone()) {
+            (Some(_), Some(_)) => Err(anyhow::anyhow!("repo set multiple times"))?,
+            (new @ Some(_), _) => new,
+            (None, old) => old,
+        };
+        self.drip.arrows.extend(drip.arrows);
         Ok(())
     }
-    fn apply_incr(mut self, drips: Vec<(HashSet<String>, Drip)>) -> anyhow::Result<Drip> {
-        for (tags, drip) in drips {
-            if self.envset.check_all(&tags) {
-                self.apply_force(drip)?;
+    pub fn apply(mut self, pill: parse::Pill) -> anyhow::Result<Pill> {
+        let mut cnt = 0;
+        for drip in pill.drips {
+            if self.envset.check_all(&drip.tags) {
+                self.apply_unchecked(drip)?;
+                cnt += 1;
             }
         }
-        Ok(self.drip)
+
+        if cnt == 0 {
+            // no drip applied, no need to check
+            return Ok(Pill {
+                name: pill.name,
+                drip: Drip::default(),
+            });
+        }
+
+        // check site; set default repo if not set
+        let site = (self.drip.site).ok_or_else(|| {
+            anyhow::anyhow!(
+                "site not set in pill <{}>, please set it in one of the drips",
+                pill.name
+            )
+        })?;
+        let rel_repo = self.drip.repo.unwrap_or(PathBuf::from(pill.name.clone()));
+        let arrows = self.drip.arrows;
+        Ok(Pill {
+            name: pill.name,
+            drip: Drip {
+                site,
+                rel_repo,
+                arrows,
+            },
+        })
     }
 }
 
-impl TryFrom<(parse::Drip, &String, &Machine)> for Drip {
-    type Error = anyhow::Error;
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn store_parse() {
+        let content = std::fs::read_to_string("templates/Drugstore.toml").unwrap();
+        let mut content: Vec<_> = content.split("\n").collect();
+        loop {
+            if let Some(last) = content.last() {
+                if last.is_empty() {
+                    content.pop();
+                } else if last.starts_with("[tutorial]") {
+                    content.pop();
+                    break;
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+        let content = content.join("\n");
 
-    fn try_from((drip, name, machine): (parse::Drip, &String, &Machine)) -> anyhow::Result<Self> {
-        let root = if let Some(root) = drip.root {
-            let quasi: QuasiAtom = root.try_into()?;
-            Some(Atom {
-                site: utils::path::expand_home(
-                    quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?,
-                ),
-                src: quasi.mode.unwrap_or_else(|| {
-                    AtomSrc::Link(utils::path::expand_home(
-                        machine
-                            .local
-                            .join(quasi.repo.unwrap_or_else(|| name.into())),
-                    ))
-                }),
-            })
-        } else {
-            None
+        // setup machine
+        let machine = crate::Machine {
+            env: ["linux".to_owned()].into(),
+            ..Default::default()
         };
-
-        let mut stem = Vec::new();
-        for conf in drip.stem.unwrap_or_default() {
-            let quasi: QuasiAtom = conf.try_into()?;
-            let site = quasi.site.ok_or_else(|| anyhow::anyhow!("no site found"))?;
-            stem.push(Atom {
-                site: site.clone(),
-                src: quasi
-                    .mode
-                    .unwrap_or_else(|| AtomSrc::Link(quasi.repo.unwrap_or(site))),
-            })
-        }
-        let ignore = drip.ignore.unwrap_or_default();
-
-        Ok(Self { root, stem, ignore })
-    }
-}
-
-impl TryFrom<parse::Atom> for QuasiAtom {
-    type Error = anyhow::Error;
-
-    fn try_from(atom: parse::Atom) -> anyhow::Result<Self> {
-        match atom {
-            parse::Atom::Plain(s) => Ok(QuasiAtom {
-                site: Some(s.into()),
-                repo: None,
-                mode: None,
-            }),
-            parse::Atom::Rich { site, repo, mode } => Ok(QuasiAtom { site, repo, mode }),
-        }
+        let store = crate::Drugstore::try_from((&content[..], &machine)).unwrap();
+        println!("{:#?}", store);
     }
 }
