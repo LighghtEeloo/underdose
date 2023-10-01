@@ -1,5 +1,5 @@
-use crate::store::{Atom, Drip};
+// use crate::store::{Atom, Drip};
 
-impl Drip {
-    pub fn observe(&self) {}
-}
+// impl Drip {
+//     pub fn observe(&self) {}
+// }
