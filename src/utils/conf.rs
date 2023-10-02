@@ -61,10 +61,11 @@ pub struct UnderdoseConf {
 }
 
 impl UnderdoseConf {
-    pub fn new(name: String) -> Self {
+    pub fn new(name: String, repo: PathBuf) -> Self {
         let toml = UNDERDOSE_TOML;
         let mut template = toml.parse::<Document>().expect("invalid doc");
         template["repo"]["name"] = toml_edit::value(name);
+        template["repo"]["local"] = toml_edit::value(repo.to_string_lossy().to_string());
         Self { template }
     }
     /// convert to Conf whose buffer is well formatted

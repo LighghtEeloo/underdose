@@ -21,7 +21,7 @@ pub struct DreamPill {
 
 impl Dreamer {
     pub fn path() -> &'static Path {
-        &UNDERDOSE_PATH.dump.as_path()
+        &UNDERDOSE_PATH.dreams.as_path()
     }
     fn index_path() -> PathBuf {
         Self::path().join("index.json")

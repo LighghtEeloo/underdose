@@ -32,6 +32,7 @@ _underdose() {
 _arguments "${_arguments_options[@]}" \
 '-h[Print help]' \
 '--help[Print help]' \
+':name -- name of the machine:' \
 && ret=0
 ;;
 (config)

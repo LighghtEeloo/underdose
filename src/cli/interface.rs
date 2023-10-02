@@ -14,7 +14,11 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     /// Initialize on a new machine, working from drugstore repo
-    Init,
+    Init {
+        /// name of the machine
+        #[arg(required = true, index = 1)]
+        name: String,
+    },
     /// Configure the machine
     #[command(alias = "edit")]
     Config,

@@ -4,7 +4,6 @@ use std::path::PathBuf;
 
 pub struct UnderdoseStatics {
     pub conf: PathBuf,
-    pub dump: PathBuf,
     pub dreams: PathBuf,
 }
 
@@ -13,7 +12,6 @@ pub static UNDERDOSE_PATH: Lazy<UnderdoseStatics> = Lazy::new(|| {
         .expect("No valid config directory fomulated");
     UnderdoseStatics {
         conf: dirs.config_dir().join("Underdose.toml"),
-        dump: dirs.cache_dir().join("dump"),
         dreams: dirs.data_dir().join("dreams"),
     }
 });
