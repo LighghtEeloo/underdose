@@ -17,6 +17,9 @@ impl<'a> Executor<'a> {
                 ArrowSrc::Git(remote) => {
                     log::info!("git clone {} {}", remote, site.display());
                     let site = crate::utils::path::canonicalize(site)?;
+                    if site.exists() {
+                        anyhow::bail!("site already exists")
+                    }
                     crate::utils::path::create_dir_parent(&site)?;
                     RepoBuilder::new().clone(remote, &site)?;
                 }
@@ -25,10 +28,13 @@ impl<'a> Executor<'a> {
 
                     log::info!("ln -s {} {}", repo.display(), site.display());
                     let repo = crate::utils::path::canonicalize(repo)?;
-                    repo.exists()
-                        .then_some(())
-                        .ok_or(anyhow::anyhow!("repo not exists"))?;
+                    if !repo.exists() {
+                        anyhow::bail!("repo does not exists")
+                    }
                     let site = crate::utils::path::canonicalize(site)?;
+                    if site.exists() {
+                        anyhow::bail!("site already exists")
+                    }
                     #[cfg(unix)]
                     {
                         std::os::unix::fs::symlink(repo, site)?;
