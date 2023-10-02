@@ -1,5 +1,11 @@
 use super::interface::{Cli, Commands};
-use crate::{utils::{conf::{UnderdoseConf, Conf}, global::UNDERDOSE_PATH}, Machine, Drugstore};
+use crate::{
+    utils::{
+        conf::{Conf, UnderdoseConf},
+        global::UNDERDOSE_PATH,
+    },
+    Drugstore, Executor, Machine,
+};
 use clap::Parser;
 
 impl Cli {
@@ -39,15 +45,24 @@ impl Cli {
                 let content = Conf {
                     buffer: String::new(),
                     path: UNDERDOSE_PATH.conf.clone(),
-                }.read()?;
+                }
+                .read()?;
                 let machine = Machine::try_from(&content[..])?;
                 let content = Conf {
                     buffer: String::new(),
                     path: machine.local.join("Drugstore.toml"),
-                }.read()?;
+                }
+                .read()?;
                 let store = Drugstore::try_from((&content[..], &machine))?;
-                println!("{:#?}", machine);
-                println!("{:#?}", store);
+                // println!("{:#?}", machine);
+                // println!("{:#?}", store);
+                for (_, drip) in store.pills.iter() {
+                    Executor {
+                        repo: &machine.local,
+                        drip,
+                    }
+                    .run()?;
+                }
             }
         };
 
