@@ -1,9 +1,8 @@
 pub mod cli {
     pub mod app;
     pub mod interface;
-
-    pub use interface::Cli;
 }
+pub use cli::interface::Cli;
 
 mod machine;
 mod store;
