@@ -21,7 +21,7 @@ impl<'a> Executor<'a> {
                         anyhow::bail!("site already exists")
                     }
                     crate::utils::path::create_dir_parent(&site)?;
-                    RepoBuilder::new().clone(remote, &site)?;
+                    RepoBuilder::new().clone(remote, &site).map_err(|e| anyhow::anyhow!("clone <{}> failed: {}", remote, e))?;
                 }
                 ArrowSrc::Link(rel) => {
                     let repo = self.repo.join(&self.drip.rel_repo).join(rel);
