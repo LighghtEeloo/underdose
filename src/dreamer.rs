@@ -1,22 +1,22 @@
-use crate::utils::global::UNDERDOSE_PATH;
+use crate::{utils::global::UNDERDOSE_PATH, Arrow, Drip};
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{BTreeSet, HashMap},
+    collections::HashMap,
     path::{Path, PathBuf},
-    time::{SystemTime, UNIX_EPOCH},
+    time::SystemTime,
 };
+use uuid::Uuid;
 
 #[derive(Default, Serialize, Deserialize, Debug)]
 pub struct Dreamer {
-    pub map: HashMap<String, DreamPill>,
+    pub map: HashMap<String, DreamDrip>,
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct DreamPill {
+pub struct DreamDrip {
     pub name: String,
-    pub root: PathBuf,
-    pub stems: Vec<PathBuf>,
-    pub versions: BTreeSet<u128>,
+    pub site: PathBuf,
+    pub versions: Vec<Uuid>,
 }
 
 impl Dreamer {
@@ -26,7 +26,7 @@ impl Dreamer {
     fn index_path() -> PathBuf {
         Self::path().join("index.json")
     }
-    fn uid_path(name: impl AsRef<str>, uid: u128) -> PathBuf {
+    fn uid_path(name: impl AsRef<str>, uid: Uuid) -> PathBuf {
         Self::path().join(name.as_ref()).join(format!("{}", uid))
     }
 
@@ -40,74 +40,26 @@ impl Dreamer {
         res
     }
 
-    pub fn dump(&mut self, name: String, root: PathBuf, stems: Vec<PathBuf>) -> anyhow::Result<()> {
-        let uid = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos() as u128;
+    pub fn dump(&mut self, name: String, drip: Drip) -> anyhow::Result<()> {
+        let uid = Uuid::now_v1(&[0, 0, 0, 0, 0, 0]);
         let path = Self::uid_path(&name, uid);
         std::fs::create_dir_all(&path)?;
-        for stem in stems.iter() {
-            std::fs::rename(root.join(stem), path.join(stem))?;
+        for Arrow { rel_site: stem, .. } in drip.arrows.iter() {
+            let site = drip.site.join(stem);
+            if site.exists() {
+                std::fs::rename(site, path.join(stem))?;
+            }
         }
         self.map
             .entry(name.clone())
-            .or_insert(DreamPill {
+            .or_insert(DreamDrip {
                 name,
-                root,
-                stems,
-                versions: BTreeSet::new(),
+                site: drip.site,
+                versions: Vec::new(),
             })
             .versions
-            .insert(uid);
+            .push(uid);
         Ok(())
-    }
-
-    pub fn recover_last(&mut self, name: String) -> anyhow::Result<()> {
-        let Some(pill) = self.map.get(&name).cloned() else {
-            return Ok(());
-        };
-        let Some(uid) = pill.versions.iter().last() else {
-            return Ok(());
-        };
-
-        // check if need to dump
-        let mut need_dump = false;
-        for stem in pill.stems.iter() {
-            if pill.root.join(stem).exists() {
-                need_dump = true;
-                break;
-            }
-        }
-        if need_dump {
-            self.dump(name.clone(), pill.root.clone(), pill.stems.clone())?;
-        }
-
-        // recover
-        let path = Self::uid_path(&name, *uid);
-        std::fs::create_dir_all(&pill.root)?;
-        for stem in pill.stems.iter() {
-            std::fs::rename(path.join(stem), pill.root.join(stem))?;
-        }
-        Ok(())
-    }
-
-    fn remove_from_version(
-        &mut self, name: String, mut f: impl FnMut(&mut BTreeSet<u128>) -> Option<u128>,
-    ) -> anyhow::Result<()> {
-        let Some(pill) = self.map.get_mut(&name) else {
-            return Ok(());
-        };
-        let Some(uid) = f(&mut pill.versions) else {
-            return Ok(());
-        };
-        std::fs::remove_dir(Self::uid_path(&name, uid))?;
-        pill.versions.remove(&uid);
-        Ok(())
-    }
-
-    pub fn remove_oldest(&mut self, name: String) -> anyhow::Result<()> {
-        self.remove_from_version(name, |version| version.pop_first())
-    }
-    pub fn remove_latest(&mut self, name: String) -> anyhow::Result<()> {
-        self.remove_from_version(name, |version| version.pop_last())
     }
 
     pub fn write_index(&self) -> anyhow::Result<()> {
