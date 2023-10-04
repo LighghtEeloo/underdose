@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     path::{Path, PathBuf},
-    time::SystemTime,
 };
 use uuid::Uuid;
 
@@ -40,25 +39,44 @@ impl Dreamer {
         res
     }
 
-    pub fn dump(&mut self, name: String, drip: Drip) -> anyhow::Result<()> {
+    pub fn dump(&mut self, name: String, drip: &Drip) -> anyhow::Result<()> {
         let uid = Uuid::now_v1(&[0, 0, 0, 0, 0, 0]);
         let path = Self::uid_path(&name, uid);
         std::fs::create_dir_all(&path)?;
+        let mut non_empty = false;
         for Arrow { rel_site: stem, .. } in drip.arrows.iter() {
             let site = drip.site.join(stem);
-            if site.exists() {
-                std::fs::rename(site, path.join(stem))?;
+            log::info!("mv {} {}", site.display(), path.join(stem).display());
+            crate::utils::path::create_dir_parent(&site)?;
+            let site = crate::utils::path::canonicalize(site)?;
+            let dump = crate::utils::path::canonicalize(path.join(stem))?;
+            if site.is_symlink() {
+                std::fs::remove_file(&site).map_err(|e| {
+                    anyhow::anyhow!("failed to remove symlink {}: {}", site.display(), e)
+                })?;
+            } else if site.exists() {
+                std::fs::rename(&site, &dump).map_err(|e| {
+                    anyhow::anyhow!(
+                        "failed to move {} to {}: {}",
+                        site.display(),
+                        dump.display(),
+                        e
+                    )
+                })?;
+                non_empty = true;
             }
         }
-        self.map
-            .entry(name.clone())
-            .or_insert(DreamDrip {
-                name,
-                site: drip.site,
-                versions: Vec::new(),
-            })
-            .versions
-            .push(uid);
+        if non_empty {
+            self.map
+                .entry(name.clone())
+                .or_insert(DreamDrip {
+                    name,
+                    site: drip.site.clone(),
+                    versions: Vec::new(),
+                })
+                .versions
+                .push(uid);
+        }
         Ok(())
     }
 
@@ -69,7 +87,7 @@ impl Dreamer {
             .map_err(|e| anyhow::anyhow!("failed to create dump dir: {}", e))?;
         std::fs::write(Self::index_path(), content)
             .map_err(|e| anyhow::anyhow!("failed to write index.json: {}", e))?;
-        log::info!("dumped index.json at {:?}", SystemTime::now());
+        log::trace!("dumped index.json at {}", Self::index_path().display());
         Ok(())
     }
 }

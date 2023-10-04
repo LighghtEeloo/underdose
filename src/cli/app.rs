@@ -4,7 +4,7 @@ use crate::{
         conf::{Conf, UnderdoseConf},
         global::UNDERDOSE_PATH,
     },
-    Drugstore, Executor, Machine,
+    Dreamer, Drugstore, Executor, Machine,
 };
 use clap::Parser;
 
@@ -54,9 +54,15 @@ impl Cli {
                 }
                 .read()?;
                 let store = Drugstore::try_from((&content[..], &machine))?;
-                // println!("{:#?}", machine);
-                // println!("{:#?}", store);
-                for (_, drip) in store.pills.iter() {
+
+                log::trace!("{:#?}", machine);
+                log::trace!("{:#?}", store);
+
+                let mut dreamer = Dreamer::new();
+                for (name, drip) in store.pills.iter() {
+                    // dump current site to dreamer
+                    dreamer.dump(name.clone(), drip)?;
+                    // execute drip
                     Executor {
                         repo: &machine.local,
                         drip,
