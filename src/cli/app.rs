@@ -41,7 +41,7 @@ impl Cli {
                 conf.edit()?;
             }
             Commands::Where => unimplemented!(),
-            Commands::Sync => {
+            Commands::Sync { names } => {
                 let content = Conf {
                     buffer: String::new(),
                     path: UNDERDOSE_PATH.conf.clone(),
@@ -58,8 +58,17 @@ impl Cli {
                 log::trace!("{:#?}", machine);
                 log::trace!("{:#?}", store);
 
+                for name in names.iter() {
+                    if !store.pills.contains_key(name) {
+                        anyhow::bail!("no such pill: {}", name);
+                    }
+                }
+
                 let mut dreamer = Dreamer::new();
                 for (name, drip) in store.pills.iter() {
+                    if names.len() > 0 && !names.contains(name) {
+                        continue;
+                    }
                     // dump current site to dreamer
                     dreamer.dump(name.clone(), drip)?;
                     // execute drip

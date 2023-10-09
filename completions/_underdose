@@ -51,6 +51,7 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 '-h[Print help]' \
 '--help[Print help]' \
+'*::names:' \
 && ret=0
 ;;
 (help)

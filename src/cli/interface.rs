@@ -25,5 +25,8 @@ pub enum Commands {
     /// Shows all path information available
     Where,
     /// Make a dream on the machine, and pour if possible
-    Sync,
+    Sync {
+        #[arg()]
+        names: Vec<String>,
+    },
 }

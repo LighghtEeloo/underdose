@@ -175,7 +175,7 @@ _underdose() {
             return 0
             ;;
         underdose__sync)
-            opts="-h --help"
+            opts="-h --help [NAMES]..."
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
