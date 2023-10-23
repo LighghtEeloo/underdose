@@ -49,6 +49,7 @@ impl Dreamer {
             log::info!("mv {} {}", site.display(), path.join(stem).display());
             crate::utils::path::create_dir_parent(&site)?;
             let site = crate::utils::path::canonicalize(site)?;
+            crate::utils::path::create_dir_parent(&path.join(stem))?;
             let dump = crate::utils::path::canonicalize(path.join(stem))?;
             if site.is_symlink() {
                 std::fs::remove_file(&site).map_err(|e| {
