@@ -18,7 +18,7 @@ impl<'a> Executor<'a> {
                     log::info!("git clone {} {}", remote, site.display());
                     let site = crate::utils::path::canonicalize(site)?;
                     if site.exists() {
-                        anyhow::bail!("site already exists")
+                        anyhow::bail!("`site` already exists")
                     }
                     crate::utils::path::create_dir_parent(&site)?;
                     rustygit::Repository::clone(remote.parse()?, &site)
@@ -32,11 +32,11 @@ impl<'a> Executor<'a> {
                     log::info!("ln -s {} {}", repo.display(), site.display());
                     let repo = crate::utils::path::canonicalize(repo)?;
                     if !repo.exists() {
-                        anyhow::bail!("repo does not exists")
+                        anyhow::bail!("`repo` <{}> does not exist", repo.display())
                     }
                     let site = crate::utils::path::canonicalize(site)?;
                     if site.exists() {
-                        anyhow::bail!("site already exists")
+                        anyhow::bail!("`site` <{}> already exists", site.display())
                     }
                     #[cfg(unix)]
                     {

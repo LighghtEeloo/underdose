@@ -1,6 +1,6 @@
 use clap::{CommandFactory, ValueEnum};
 use clap_complete::{generate_to, Shell};
-use std::io;
+use std::{io, path::PathBuf};
 
 include!("src/cli/interface.rs");
 
