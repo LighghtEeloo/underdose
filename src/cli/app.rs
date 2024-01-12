@@ -19,8 +19,10 @@ impl Cli {
                 let repo = std::env::current_dir()?;
                 let underdose_conf = UnderdoseConf::new(name, repo);
                 let conf = underdose_conf.conf(UNDERDOSE_PATH.conf.clone());
+                log::info!("writing underdose configuration to {}", conf.path.display());
                 if conf.path.exists() {
                     print!("underdose configuration already exists; overwrite? [y/N] ");
+                    std::io::Write::flush(&mut std::io::stdout())?;
                     let mut input = String::new();
                     std::io::stdin().read_line(&mut input)?;
                     if input.trim().to_lowercase() == "y" {
