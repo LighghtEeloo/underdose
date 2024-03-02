@@ -1,5 +1,5 @@
-use directories::ProjectDirs;
 use once_cell::sync::Lazy;
+use sculptor::{AppAuthor, ProjectInfo};
 use std::path::PathBuf;
 
 pub struct UnderdoseStatics {
@@ -7,11 +7,18 @@ pub struct UnderdoseStatics {
     pub dreams: PathBuf,
 }
 
-pub static UNDERDOSE_PATH: Lazy<UnderdoseStatics> = Lazy::new(|| {
-    let dirs = ProjectDirs::from("", "LitiaEeloo", "Underdose")
-        .expect("No valid config directory fomulated");
-    UnderdoseStatics {
-        conf: dirs.config_dir().join("Underdose.toml"),
-        dreams: dirs.data_dir().join("dreams"),
+pub struct ProjectDirs;
+
+impl AppAuthor for ProjectDirs {
+    fn author() -> &'static str {
+        "LitiaEeloo"
     }
+    fn app_name() -> &'static str {
+        "Underdose"
+    }
+}
+
+pub static UNDERDOSE_PATH: Lazy<UnderdoseStatics> = Lazy::new(|| UnderdoseStatics {
+    conf: ProjectDirs::config_dir().join("Underdose.toml"),
+    dreams: ProjectDirs::data_dir().join("dreams"),
 });
