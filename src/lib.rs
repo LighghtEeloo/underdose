@@ -6,8 +6,8 @@ pub use cli::interface::Cli;
 
 mod machine;
 mod drugstore;
-pub use machine::Machine;
 pub use drugstore::Drugstore;
+pub use machine::Machine;
 
 mod executor;
 mod observor;

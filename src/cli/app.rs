@@ -35,7 +35,7 @@ impl Cli {
                 }
                 conf.edit()?;
             }
-            Commands::Config => {
+            Commands::Conf => {
                 let conf = Conf {
                     buffer: String::new(),
                     path: UNDERDOSE_PATH.conf.clone(),
@@ -96,6 +96,15 @@ impl Cli {
                     }
                     .run()?;
                 }
+            }
+            Commands::Clean { name, version } => {
+                let mut dreamer = Dreamer::new();
+                let drip = dreamer
+                    .map
+                    .get_mut(&name)
+                    .ok_or_else(|| anyhow::anyhow!("the name doesn't exist"))?;
+                let removing = drip.matches_uuid(version);
+                drip.remove_uuids(removing)?;
             }
         };
 

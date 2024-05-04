@@ -12,8 +12,11 @@ _underdose() {
             ",$1")
                 cmd="underdose"
                 ;;
-            underdose,config)
-                cmd="underdose__config"
+            underdose,clean)
+                cmd="underdose__clean"
+                ;;
+            underdose,conf)
+                cmd="underdose__conf"
                 ;;
             underdose,help)
                 cmd="underdose__help"
@@ -27,8 +30,11 @@ _underdose() {
             underdose,where)
                 cmd="underdose__where"
                 ;;
-            underdose__help,config)
-                cmd="underdose__help__config"
+            underdose__help,clean)
+                cmd="underdose__help__clean"
+                ;;
+            underdose__help,conf)
+                cmd="underdose__help__conf"
                 ;;
             underdose__help,help)
                 cmd="underdose__help__help"
@@ -49,7 +55,7 @@ _underdose() {
 
     case "${cmd}" in
         underdose)
-            opts="-h -V --help --version init config where sync help"
+            opts="-h -V --help --version init conf where sync clean help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 1 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -62,7 +68,37 @@ _underdose() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        underdose__config)
+        underdose__clean)
+            opts="-n -v -h --name --version --help"
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                --name)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -n)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                --version)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                -v)
+                    COMPREPLY=($(compgen -f "${cur}"))
+                    return 0
+                    ;;
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        underdose__conf)
             opts="-h --help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
@@ -77,7 +113,7 @@ _underdose() {
             return 0
             ;;
         underdose__help)
-            opts="init config where sync help"
+            opts="init conf where sync clean help"
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 2 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
                 return 0
@@ -90,7 +126,21 @@ _underdose() {
             COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
             return 0
             ;;
-        underdose__help__config)
+        underdose__help__clean)
+            opts=""
+            if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
+                COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+                return 0
+            fi
+            case "${prev}" in
+                *)
+                    COMPREPLY=()
+                    ;;
+            esac
+            COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+            return 0
+            ;;
+        underdose__help__conf)
             opts=""
             if [[ ${cur} == -* || ${COMP_CWORD} -eq 3 ]] ; then
                 COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )

@@ -35,7 +35,7 @@ _arguments "${_arguments_options[@]}" \
 ':name -- name of the machine:' \
 && ret=0
 ;;
-(config)
+(conf)
 _arguments "${_arguments_options[@]}" \
 '-h[Print help]' \
 '--help[Print help]' \
@@ -54,6 +54,16 @@ _arguments "${_arguments_options[@]}" \
 '*::names:' \
 && ret=0
 ;;
+(clean)
+_arguments "${_arguments_options[@]}" \
+'-n+[name of the backup]:NAME: ' \
+'--name=[name of the backup]:NAME: ' \
+'-v+[version of the backup, can be a uuid or "all"]:VERSION: ' \
+'--version=[version of the backup, can be a uuid or "all"]:VERSION: ' \
+'-h[Print help]' \
+'--help[Print help]' \
+&& ret=0
+;;
 (help)
 _arguments "${_arguments_options[@]}" \
 ":: :_underdose__help_commands" \
@@ -70,7 +80,7 @@ _arguments "${_arguments_options[@]}" \
 _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
-(config)
+(conf)
 _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
@@ -79,6 +89,10 @@ _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
 (sync)
+_arguments "${_arguments_options[@]}" \
+&& ret=0
+;;
+(clean)
 _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
@@ -99,30 +113,42 @@ esac
 _underdose_commands() {
     local commands; commands=(
 'init:Initialize on a new machine, working from drugstore repo' \
-'config:Configure the machine' \
+'conf:Configure the machine' \
 'where:Shows all path information available' \
 'sync:Make a dream on the machine, and pour if possible' \
+'clean:Clean up backups' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'underdose commands' commands "$@"
 }
-(( $+functions[_underdose__config_commands] )) ||
-_underdose__config_commands() {
+(( $+functions[_underdose__clean_commands] )) ||
+_underdose__clean_commands() {
     local commands; commands=()
-    _describe -t commands 'underdose config commands' commands "$@"
+    _describe -t commands 'underdose clean commands' commands "$@"
 }
-(( $+functions[_underdose__help__config_commands] )) ||
-_underdose__help__config_commands() {
+(( $+functions[_underdose__help__clean_commands] )) ||
+_underdose__help__clean_commands() {
     local commands; commands=()
-    _describe -t commands 'underdose help config commands' commands "$@"
+    _describe -t commands 'underdose help clean commands' commands "$@"
+}
+(( $+functions[_underdose__conf_commands] )) ||
+_underdose__conf_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose conf commands' commands "$@"
+}
+(( $+functions[_underdose__help__conf_commands] )) ||
+_underdose__help__conf_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose help conf commands' commands "$@"
 }
 (( $+functions[_underdose__help_commands] )) ||
 _underdose__help_commands() {
     local commands; commands=(
 'init:Initialize on a new machine, working from drugstore repo' \
-'config:Configure the machine' \
+'conf:Configure the machine' \
 'where:Shows all path information available' \
 'sync:Make a dream on the machine, and pour if possible' \
+'clean:Clean up backups' \
 'help:Print this message or the help of the given subcommand(s)' \
     )
     _describe -t commands 'underdose help commands' commands "$@"

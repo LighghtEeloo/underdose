@@ -17,12 +17,21 @@ pub enum Commands {
     },
     /// Configure the machine
     #[command(alias = "edit")]
-    Config,
+    Conf,
     /// Shows all path information available
     Where,
     /// Make a dream on the machine, and pour if possible
     Sync {
         #[arg()]
         names: Vec<String>,
+    },
+    /// Clean up backups
+    Clean {
+        /// name of the backup
+        #[arg(short, long)]
+        name: String,
+        /// version of the backup, can be a uuid or "all"
+        #[arg(short, long)]
+        version: String,
     },
 }
