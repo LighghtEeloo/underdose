@@ -2,7 +2,7 @@ use std::{
     io::{self, Read, Write},
     path::PathBuf,
 };
-use toml_edit::Document;
+use toml_edit::DocumentMut;
 
 pub const UNDERDOSE_TOML: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -57,13 +57,13 @@ impl Conf {
 
 #[derive(Debug)]
 pub struct UnderdoseConf {
-    pub template: toml_edit::Document,
+    pub template: DocumentMut,
 }
 
 impl UnderdoseConf {
     pub fn new(name: String, repo: PathBuf) -> Self {
         let toml = UNDERDOSE_TOML;
-        let mut template = toml.parse::<Document>().expect("invalid doc");
+        let mut template = toml.parse::<DocumentMut>().expect("invalid doc");
         template["repo"]["name"] = toml_edit::value(name);
         template["repo"]["local"] = toml_edit::value(repo.to_string_lossy().to_string());
         Self { template }
