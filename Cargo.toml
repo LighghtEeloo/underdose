@@ -17,7 +17,7 @@ name = "underdose"
 [dependencies]
 
 # cli toolbox
-sculptor = "0.0.2"
+sculptor = "0.0.5"
 
 # static
 once_cell = "1.8"
