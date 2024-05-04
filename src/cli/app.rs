@@ -42,7 +42,23 @@ impl Cli {
                 };
                 conf.edit()?;
             }
-            Commands::Where => unimplemented!(),
+            Commands::Where => {
+                let conf_path = UNDERDOSE_PATH.conf.display();
+                let conf = Conf {
+                    buffer: String::new(),
+                    path: UNDERDOSE_PATH.conf.clone(),
+                };
+                let content = conf.read()?;
+                let machine = Machine::try_from(&content[..])?;
+                let drugstore_path = machine.local.display();
+                let dreams_path = UNDERDOSE_PATH.dreams.display();
+                print!("[configurations] ");
+                println!("{}", conf_path);
+                print!("[drugstore] ");
+                println!("{}", drugstore_path);
+                print!("[dreams] ");
+                println!("{}", dreams_path);
+            }
             Commands::Sync { names } => {
                 let content = Conf {
                     buffer: String::new(),

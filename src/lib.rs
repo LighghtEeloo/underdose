@@ -5,9 +5,9 @@ pub mod cli {
 pub use cli::interface::Cli;
 
 mod machine;
-mod store;
+mod drugstore;
 pub use machine::Machine;
-pub use store::Drugstore;
+pub use drugstore::Drugstore;
 
 mod executor;
 mod observor;
