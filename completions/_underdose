@@ -14,7 +14,7 @@ _underdose() {
     fi
 
     local context curcontext="$curcontext" state line
-    _arguments "${_arguments_options[@]}" \
+    _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
 '-V[Print version]' \
@@ -29,33 +29,33 @@ _underdose() {
         curcontext="${curcontext%:*:*}:underdose-command-$line[1]:"
         case $line[1] in
             (init)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
 ':name -- name of the machine:' \
 && ret=0
 ;;
 (conf)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
 && ret=0
 ;;
 (where)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
 && ret=0
 ;;
 (sync)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
 '*::names:' \
 && ret=0
 ;;
 (clean)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 '-n+[name of the backup]:NAME: ' \
 '--name=[name of the backup]:NAME: ' \
 '-v+[version of the backup, can be a uuid or "all"]:VERSION: ' \
@@ -65,7 +65,7 @@ _arguments "${_arguments_options[@]}" \
 && ret=0
 ;;
 (help)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 ":: :_underdose__help_commands" \
 "*::: :->help" \
 && ret=0
@@ -77,27 +77,27 @@ _arguments "${_arguments_options[@]}" \
         curcontext="${curcontext%:*:*}:underdose-help-command-$line[1]:"
         case $line[1] in
             (init)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (conf)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (where)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (sync)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (clean)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
 (help)
-_arguments "${_arguments_options[@]}" \
+_arguments "${_arguments_options[@]}" : \
 && ret=0
 ;;
         esac
@@ -126,20 +126,10 @@ _underdose__clean_commands() {
     local commands; commands=()
     _describe -t commands 'underdose clean commands' commands "$@"
 }
-(( $+functions[_underdose__help__clean_commands] )) ||
-_underdose__help__clean_commands() {
-    local commands; commands=()
-    _describe -t commands 'underdose help clean commands' commands "$@"
-}
 (( $+functions[_underdose__conf_commands] )) ||
 _underdose__conf_commands() {
     local commands; commands=()
     _describe -t commands 'underdose conf commands' commands "$@"
-}
-(( $+functions[_underdose__help__conf_commands] )) ||
-_underdose__help__conf_commands() {
-    local commands; commands=()
-    _describe -t commands 'underdose help conf commands' commands "$@"
 }
 (( $+functions[_underdose__help_commands] )) ||
 _underdose__help_commands() {
@@ -153,6 +143,16 @@ _underdose__help_commands() {
     )
     _describe -t commands 'underdose help commands' commands "$@"
 }
+(( $+functions[_underdose__help__clean_commands] )) ||
+_underdose__help__clean_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose help clean commands' commands "$@"
+}
+(( $+functions[_underdose__help__conf_commands] )) ||
+_underdose__help__conf_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose help conf commands' commands "$@"
+}
 (( $+functions[_underdose__help__help_commands] )) ||
 _underdose__help__help_commands() {
     local commands; commands=()
@@ -163,25 +163,25 @@ _underdose__help__init_commands() {
     local commands; commands=()
     _describe -t commands 'underdose help init commands' commands "$@"
 }
-(( $+functions[_underdose__init_commands] )) ||
-_underdose__init_commands() {
-    local commands; commands=()
-    _describe -t commands 'underdose init commands' commands "$@"
-}
 (( $+functions[_underdose__help__sync_commands] )) ||
 _underdose__help__sync_commands() {
     local commands; commands=()
     _describe -t commands 'underdose help sync commands' commands "$@"
 }
-(( $+functions[_underdose__sync_commands] )) ||
-_underdose__sync_commands() {
-    local commands; commands=()
-    _describe -t commands 'underdose sync commands' commands "$@"
-}
 (( $+functions[_underdose__help__where_commands] )) ||
 _underdose__help__where_commands() {
     local commands; commands=()
     _describe -t commands 'underdose help where commands' commands "$@"
+}
+(( $+functions[_underdose__init_commands] )) ||
+_underdose__init_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose init commands' commands "$@"
+}
+(( $+functions[_underdose__sync_commands] )) ||
+_underdose__sync_commands() {
+    local commands; commands=()
+    _describe -t commands 'underdose sync commands' commands "$@"
 }
 (( $+functions[_underdose__where_commands] )) ||
 _underdose__where_commands() {
