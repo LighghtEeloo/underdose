@@ -21,10 +21,10 @@ Register-ArgumentCompleter -Native -CommandName 'underdose' -ScriptBlock {
 
     $completions = @(switch ($command) {
         'underdose' {
-            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
-            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
-            [CompletionResult]::new('-V', 'V ', [CompletionResultType]::ParameterName, 'Print version')
-            [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'Print version')
+            [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('-V', '-V ', [CompletionResultType]::ParameterName, 'Print version')
+            [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'Print version')
             [CompletionResult]::new('init', 'init', [CompletionResultType]::ParameterValue, 'Initialize on a new machine, working from drugstore repo')
             [CompletionResult]::new('conf', 'conf', [CompletionResultType]::ParameterValue, 'Configure the machine')
             [CompletionResult]::new('where', 'where', [CompletionResultType]::ParameterValue, 'Shows all path information available')
@@ -34,32 +34,32 @@ Register-ArgumentCompleter -Native -CommandName 'underdose' -ScriptBlock {
             break
         }
         'underdose;init' {
-            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
-            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             break
         }
         'underdose;conf' {
-            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
-            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             break
         }
         'underdose;where' {
-            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
-            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             break
         }
         'underdose;sync' {
-            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
-            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             break
         }
         'underdose;clean' {
-            [CompletionResult]::new('-n', 'n', [CompletionResultType]::ParameterName, 'name of the backup')
-            [CompletionResult]::new('--name', 'name', [CompletionResultType]::ParameterName, 'name of the backup')
-            [CompletionResult]::new('-v', 'v', [CompletionResultType]::ParameterName, 'version of the backup, can be a uuid or "all"')
-            [CompletionResult]::new('--version', 'version', [CompletionResultType]::ParameterName, 'version of the backup, can be a uuid or "all"')
-            [CompletionResult]::new('-h', 'h', [CompletionResultType]::ParameterName, 'Print help')
-            [CompletionResult]::new('--help', 'help', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('-n', '-n', [CompletionResultType]::ParameterName, 'name of the backup')
+            [CompletionResult]::new('--name', '--name', [CompletionResultType]::ParameterName, 'name of the backup')
+            [CompletionResult]::new('-v', '-v', [CompletionResultType]::ParameterName, 'version of the backup, can be a uuid or "all"')
+            [CompletionResult]::new('--version', '--version', [CompletionResultType]::ParameterName, 'version of the backup, can be a uuid or "all"')
+            [CompletionResult]::new('-h', '-h', [CompletionResultType]::ParameterName, 'Print help')
+            [CompletionResult]::new('--help', '--help', [CompletionResultType]::ParameterName, 'Print help')
             break
         }
         'underdose;help' {

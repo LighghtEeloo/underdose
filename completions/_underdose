@@ -32,7 +32,7 @@ _underdose() {
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-':name -- name of the machine:' \
+':name -- name of the machine:_default' \
 && ret=0
 ;;
 (conf)
@@ -51,15 +51,15 @@ _arguments "${_arguments_options[@]}" : \
 _arguments "${_arguments_options[@]}" : \
 '-h[Print help]' \
 '--help[Print help]' \
-'*::names:' \
+'*::names:_default' \
 && ret=0
 ;;
 (clean)
 _arguments "${_arguments_options[@]}" : \
-'-n+[name of the backup]:NAME: ' \
-'--name=[name of the backup]:NAME: ' \
-'-v+[version of the backup, can be a uuid or "all"]:VERSION: ' \
-'--version=[version of the backup, can be a uuid or "all"]:VERSION: ' \
+'-n+[name of the backup]:NAME:_default' \
+'--name=[name of the backup]:NAME:_default' \
+'-v+[version of the backup, can be a uuid or "all"]:VERSION:_default' \
+'--version=[version of the backup, can be a uuid or "all"]:VERSION:_default' \
 '-h[Print help]' \
 '--help[Print help]' \
 && ret=0
