@@ -35,9 +35,9 @@ pub enum ArrowSrc {
 impl Display for ArrowSrc {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ArrowSrc::Git(remote) => write!(f, "git({})", remote),
-            ArrowSrc::Link(repo) => write!(f, "ln({})", repo.display()),
-            ArrowSrc::Collector => write!(f, "collector"),
+            | ArrowSrc::Git(remote) => write!(f, "git({})", remote),
+            | ArrowSrc::Link(repo) => write!(f, "ln({})", repo.display()),
+            | ArrowSrc::Collector => write!(f, "collector"),
         }
     }
 }

@@ -26,12 +26,12 @@ impl<'a> Dirt<'a> {
             |file: DiffFile<'a>| file.path().ok_or_else(|| anyhow::anyhow!("file path err"));
         for status in statuses.iter() {
             match status.index_to_workdir() {
-                None => (),
-                Some(status) => {
+                | None => (),
+                | Some(status) => {
                     let delta = status.status();
                     match delta {
-                        Delta::Unmodified | Delta::Ignored => (),
-                        Delta::Added
+                        | Delta::Unmodified | Delta::Ignored => (),
+                        | Delta::Added
                         | Delta::Deleted
                         | Delta::Modified
                         | Delta::Renamed

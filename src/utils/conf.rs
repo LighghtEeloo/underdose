@@ -13,6 +13,17 @@ pub const DRUGSTORE_TOML: &str = include_str!(concat!(
     "/templates/Drugstore.toml"
 ));
 
+#[derive(Clone, Copy)]
+pub struct TomlStr<'a>(&'a str);
+impl<'a> TomlStr<'a> {
+    pub fn new(buf: &'a str) -> Self {
+        Self(buf)
+    }
+    pub fn as_str(&self) -> &'a str {
+        self.0
+    }
+}
+
 #[derive(Debug)]
 pub struct Conf {
     pub buffer: String,

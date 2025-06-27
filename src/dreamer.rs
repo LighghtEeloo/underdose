@@ -1,4 +1,4 @@
-use crate::{utils::global::UNDERDOSE_PATH, Arrow, Drip};
+use crate::{Arrow, Drip, utils::global::UNDERDOSE_PATH};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},

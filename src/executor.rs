@@ -11,10 +11,11 @@ pub struct Executor<'a> {
 
 impl<'a> Executor<'a> {
     pub fn run(self) -> anyhow::Result<()> {
+        // run all arrows
         for arrow in self.drip.arrows.iter() {
             let site = self.drip.site.join(&arrow.rel_site);
             match &arrow.src {
-                ArrowSrc::Git(remote) => {
+                | ArrowSrc::Git(remote) => {
                     log::info!("git clone {} {}", remote, site.display());
                     let site = crate::utils::path::canonicalize(site)?;
                     if site.exists() {
@@ -26,7 +27,7 @@ impl<'a> Executor<'a> {
                     //     .clone(remote, &site)
                         .map_err(|e| anyhow::anyhow!("clone <{}> failed: {}", remote, e))?;
                 }
-                ArrowSrc::Link(rel) => {
+                | ArrowSrc::Link(rel) => {
                     let repo = self.repo.join(&self.drip.rel_repo).join(rel);
 
                     log::info!("ln -s {} {}", repo.display(), site.display());
@@ -52,7 +53,7 @@ impl<'a> Executor<'a> {
                         unimplemented!("symlink not supported on this platform")
                     }
                 }
-                ArrowSrc::Collector => {
+                | ArrowSrc::Collector => {
                     log::info!("collector {}", site.display());
                 }
             }

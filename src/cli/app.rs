@@ -1,10 +1,10 @@
 use super::interface::{Cli, Commands};
 use crate::{
+    Dreamer, Drugstore, Executor, Machine,
     utils::{
-        conf::{Conf, UnderdoseConf},
+        conf::{Conf, TomlStr, UnderdoseConf},
         global::UNDERDOSE_PATH,
     },
-    Dreamer, Drugstore, Executor, Machine,
 };
 use clap::Parser;
 
@@ -14,7 +14,7 @@ impl Cli {
     }
     pub fn main(self) -> anyhow::Result<()> {
         match self.command {
-            Commands::Init { name } => {
+            | Commands::Init { name } => {
                 // setup underdose configuration
                 let repo = std::env::current_dir()?;
                 let underdose_conf = UnderdoseConf::new(name, repo);
@@ -35,14 +35,14 @@ impl Cli {
                 }
                 conf.edit()?;
             }
-            Commands::Conf => {
+            | Commands::Conf => {
                 let conf = Conf {
                     buffer: String::new(),
                     path: UNDERDOSE_PATH.conf.clone(),
                 };
                 conf.edit()?;
             }
-            Commands::Where => {
+            | Commands::Where => {
                 let conf_path = UNDERDOSE_PATH.conf.display();
                 let conf = Conf {
                     buffer: String::new(),
@@ -59,7 +59,7 @@ impl Cli {
                 print!("[dreams] ");
                 println!("{}", dreams_path);
             }
-            Commands::Sync { names } => {
+            | Commands::Sync { names } => {
                 let content = Conf {
                     buffer: String::new(),
                     path: UNDERDOSE_PATH.conf.clone(),
@@ -71,7 +71,8 @@ impl Cli {
                     path: machine.local.join("Drugstore.toml"),
                 }
                 .read()?;
-                let store = Drugstore::try_from((&content[..], &machine))?;
+                let toml = TomlStr::new(&content[..]);
+                let store = Drugstore::try_from((toml, &machine))?;
 
                 log::trace!("{:#?}", machine);
                 log::trace!("{:#?}", store);
@@ -80,6 +81,13 @@ impl Cli {
                     if !store.pills.contains_key(name) {
                         anyhow::bail!("no such pill: {}", name);
                     }
+                }
+
+                for cmd in store.cmds.iter() {
+                    log::info!("running command: {}", cmd.name);
+                    let _child = std::process::Command::new(&cmd.name)
+                        .args(&cmd.args)
+                        .spawn()?;
                 }
 
                 let mut dreamer = Dreamer::new();
@@ -97,7 +105,7 @@ impl Cli {
                     .run()?;
                 }
             }
-            Commands::Clean { name, version } => {
+            | Commands::Clean { name, version } => {
                 let mut dreamer = Dreamer::new();
                 let drip = dreamer
                     .map

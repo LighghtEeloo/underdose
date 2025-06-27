@@ -1,3 +1,4 @@
+use crate::utils::conf::TomlStr;
 use crate::{Arrow, Drip, Machine};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
@@ -9,6 +10,7 @@ use std::{
 #[derive(Debug)]
 pub struct Drugstore {
     pub env: EnvSet,
+    pub cmds: Vec<Command>,
     pub pills: IndexMap<String, Drip>,
 }
 
@@ -32,7 +34,7 @@ impl EnvMap {
     }
 }
 
-/// a set of machine possesed envs
+/// a set of machine possessed envs
 #[derive(Debug)]
 pub struct EnvSet {
     pub set: HashSet<String>,
@@ -45,6 +47,12 @@ impl EnvSet {
     pub fn check_all(&self, tags: &HashSet<String>) -> bool {
         tags.iter().all(|tag| self.check(tag))
     }
+}
+
+#[derive(Debug)]
+pub struct Command {
+    pub name: String,
+    pub args: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -66,8 +74,16 @@ mod parse {
     #[serde(deny_unknown_fields)]
     pub struct Drugstore {
         pub env: toml::Value,
+        pub cmd: Vec<Command>,
         pub pill: Vec<Pill>,
         pub tutorial: Option<()>,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    #[serde(deny_unknown_fields)]
+    pub struct Command {
+        pub name: String,
+        pub args: Vec<String>,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -94,11 +110,11 @@ mod parse {
     }
 }
 
-impl TryFrom<(&str, &Machine)> for Drugstore {
+impl TryFrom<(TomlStr<'_>, &Machine)> for Drugstore {
     type Error = anyhow::Error;
 
-    fn try_from((buf, machine): (&str, &Machine)) -> anyhow::Result<Self> {
-        let conf: parse::Drugstore = toml::from_str(buf)?;
+    fn try_from((buf, machine): (TomlStr<'_>, &Machine)) -> anyhow::Result<Self> {
+        let conf: parse::Drugstore = toml::from_str(buf.as_str())?;
         (conf, machine).try_into()
     }
 }
@@ -136,6 +152,12 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
         register_env(&mut map, &mut Vec::new(), &store.env);
         let env = EnvMap { map }.resolve(machine)?;
 
+        let cmds = store
+            .cmd
+            .into_iter()
+            .map(|parse::Command { name, args }| Command { name, args })
+            .collect();
+
         let mut pills = IndexMap::new();
         for pill in store.pill {
             if pills.contains_key(&pill.name) {
@@ -144,20 +166,20 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
 
             let name = pill.name.clone();
             match DripApplyIncr::new(&env).apply(pill) {
-                Ok(pill) => {
+                | Ok(pill) => {
                     if pill.non_empty() {
                         pills.insert(pill.name.to_owned(), pill.drip);
                     } else {
                         log::info!("ignored empty pill <{}>", name)
                     }
                 }
-                Err(e) => {
+                | Err(e) => {
                     log::warn!("ignored pill <{}>: {}", name, e);
                 }
             }
         }
 
-        Ok(Drugstore { env, pills })
+        Ok(Drugstore { env, cmds, pills })
     }
 }
 
@@ -180,14 +202,14 @@ impl<'a> DripApplyIncr<'a> {
     }
     fn apply_unchecked(&mut self, drip: parse::Drip) -> anyhow::Result<()> {
         self.drip.site = match (drip.site, self.drip.site.clone()) {
-            (Some(_), Some(_)) => Err(anyhow::anyhow!("site set multiple times"))?,
-            (new @ Some(_), _) => new,
-            (None, old) => old,
+            | (Some(_), Some(_)) => Err(anyhow::anyhow!("site set multiple times"))?,
+            | (new @ Some(_), _) => new,
+            | (None, old) => old,
         };
         self.drip.repo = match (drip.repo, self.drip.repo.clone()) {
-            (Some(_), Some(_)) => Err(anyhow::anyhow!("repo set multiple times"))?,
-            (new @ Some(_), _) => new,
-            (None, old) => old,
+            | (Some(_), Some(_)) => Err(anyhow::anyhow!("repo set multiple times"))?,
+            | (new @ Some(_), _) => new,
+            | (None, old) => old,
         };
         self.drip.arrows.extend(drip.arrows);
         Ok(())
@@ -234,13 +256,14 @@ mod tests {
     #[test]
     fn parse_store() {
         let content = crate::utils::tests::remove_tutorial(crate::utils::conf::DRUGSTORE_TOML);
+        let toml = crate::drugstore::TomlStr::new(&content[..]);
 
         // parse with linux
         let machine = crate::Machine {
             env: ["linux".to_owned()].into(),
             ..Default::default()
         };
-        let store = crate::Drugstore::try_from((&content[..], &machine)).unwrap();
+        let store = crate::Drugstore::try_from((toml, &machine)).unwrap();
         println!("linux: {:#?}", store);
 
         // parse with mac
@@ -248,7 +271,7 @@ mod tests {
             env: ["mac".to_owned()].into(),
             ..Default::default()
         };
-        let store = crate::Drugstore::try_from((&content[..], &machine)).unwrap();
+        let store = crate::Drugstore::try_from((toml, &machine)).unwrap();
         println!("mac: {:#?}", store);
     }
 }
