@@ -1,10 +1,10 @@
 [package]
 name = "underdose"
-version = "0.0.5"
+version = "0.0.6"
 edition = "2024"
 authors = ["LitiaEeloo <litiaeeloo@gmail.com>"]
 description = "May the dotfiles be with you."
-readme = "Readme.md"
+readme = "readme.md"
 homepage = "https://github.com/LighghtEeloo/underdose"
 repository = "https://github.com/LighghtEeloo/underdose"
 license = "MIT"
