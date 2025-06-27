@@ -10,7 +10,7 @@ use std::{
 #[derive(Debug)]
 pub struct Drugstore {
     pub env: EnvSet,
-    pub cmds: Vec<Command>,
+    pub cmds: IndexMap<String, Command>,
     pub pills: IndexMap<String, Drip>,
 }
 
@@ -52,6 +52,7 @@ impl EnvSet {
 #[derive(Debug)]
 pub struct Command {
     pub name: String,
+    pub prog: String,
     pub args: Vec<String>,
 }
 
@@ -74,7 +75,9 @@ mod parse {
     #[serde(deny_unknown_fields)]
     pub struct Drugstore {
         pub env: toml::Value,
+        #[serde(default)]
         pub cmd: Vec<Command>,
+        #[serde(default)]
         pub pill: Vec<Pill>,
         pub tutorial: Option<()>,
     }
@@ -83,6 +86,9 @@ mod parse {
     #[serde(deny_unknown_fields)]
     pub struct Command {
         pub name: String,
+        #[serde(alias = "env", default)]
+        pub tags: HashSet<String>,
+        pub prog: String,
         pub args: Vec<String>,
     }
 
@@ -155,7 +161,14 @@ impl TryFrom<(parse::Drugstore, &Machine)> for Drugstore {
         let cmds = store
             .cmd
             .into_iter()
-            .map(|parse::Command { name, args }| Command { name, args })
+            .filter_map(
+                |parse::Command {
+                     name,
+                     tags,
+                     prog,
+                     args,
+                 }| env.check_all(&tags).then(|| (name.clone(), Command { name, prog, args })),
+            )
             .collect();
 
         let mut pills = IndexMap::new();

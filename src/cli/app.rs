@@ -78,16 +78,27 @@ impl Cli {
                 log::trace!("{:#?}", store);
 
                 for name in names.iter() {
-                    if !store.pills.contains_key(name) {
-                        anyhow::bail!("no such pill: {}", name);
+                    if !store.pills.contains_key(name) && !store.cmds.contains_key(name) {
+                        anyhow::bail!("no such pill or command: {}", name);
                     }
                 }
 
-                for cmd in store.cmds.iter() {
-                    log::info!("running command: {}", cmd.name);
-                    let _child = std::process::Command::new(&cmd.name)
+                for (name, cmd) in store.cmds.iter() {
+                    if names.len() > 0 && !names.contains(&name) {
+                        continue;
+                    }
+                    log::info!(
+                        "running command <{}> :: {} {}",
+                        name,
+                        cmd.prog,
+                        cmd.args.join(" ")
+                    );
+                    let status = std::process::Command::new(&cmd.prog)
                         .args(&cmd.args)
-                        .spawn()?;
+                        .status()?;
+                    if !status.success() {
+                        anyhow::bail!("command failed: {}", name);
+                    }
                 }
 
                 let mut dreamer = Dreamer::new();
