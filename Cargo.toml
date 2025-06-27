@@ -1,7 +1,7 @@
 [package]
 name = "underdose"
 version = "0.0.5"
-edition = "2021"
+edition = "2024"
 authors = ["LitiaEeloo <litiaeeloo@gmail.com>"]
 description = "May the dotfiles be with you."
 readme = "Readme.md"
@@ -17,7 +17,7 @@ name = "underdose"
 [dependencies]
 
 # cli toolbox
-sculptor = { version = "0.0.8", features = ["project_info", "file_io"]}
+sculptor = { version = "0.0.9", features = ["project_info", "file_io"]}
 
 # static
 once_cell = "1.20"
