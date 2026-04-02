@@ -20,7 +20,7 @@ name = "underdose"
 sculptor = { version = "0.0.10", features = ["project_info", "file_io"]}
 
 # static
-once_cell = "1.20"
+once_cell = "1.21"
 
 # error handling
 anyhow = "1.0"
@@ -36,15 +36,15 @@ env_logger = "0.11"
 # serde
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-toml = "1.0.3"
-toml_edit = "0.23"
+toml = "1.1.2"
+toml_edit = "0.25"
 
 # git operations
 git2 = "0.20"
 rustygit = "0.5"
 
 # cli
-clap = { version = "4.5", features = ["derive"] }
+clap = { version = "4.6", features = ["derive"] }
 colored = "3.0"
 
 # path management
@@ -61,7 +61,7 @@ fslock = "0.2"
 # data structures
 indexmap = { version = "2.7", features = ["serde"] }
 # phf = { version = "0.11", features = ["macros"] }
-uuid = { version = "1.11", features = ["serde", "v1", "std", "rng"] }
+uuid = { version = "1.23", features = ["serde", "v1", "std", "rng"] }
 
 [build-dependencies]
 clap = { version = "4.0", features = ["derive"] }
