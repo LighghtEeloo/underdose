@@ -1,6 +1,6 @@
 [package]
 name = "underdose"
-version = "0.0.7"
+version = "0.0.8"
 edition = "2024"
 authors = ["LitiaEeloo <litiaeeloo@gmail.com>"]
 description = "May the dotfiles be with you."
